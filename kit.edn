@@ -1,0 +1,8 @@
+{:full-name "fdhenard/cledgers"
+ :ns-name   "fdhenard.cledgers"
+ :sanitized "fdhenard/cledgers"
+ :name      "cledgers"
+ :modules   {:root         "modules"
+             :repositories [{:url  "https://github.com/kit-clj/modules.git"
+                             :tag  "master"
+                             :name "kit-modules"}]}}
