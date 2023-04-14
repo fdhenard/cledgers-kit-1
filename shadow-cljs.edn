@@ -1,10 +1,17 @@
 {:nrepl {:port 7002}
- :source-paths ["src/cljs"]
+ :source-paths ["src/cljs" "src/cljc"]
  :dependencies [[binaryage/devtools "1.0.3"]
                 [nrepl "0.8.3"]
                 [reagent "1.1.0"]
                 [cljs-ajax "0.8.4"]
-                #_[react/react "18.2.0"]]
+                #_[react/react "18.2.0"]
+                [re-frame "1.3.0"]
+                [clj-commons/secretary "1.2.4"]
+                [markdown-clj "1.11.4"]
+                [com.lucasbradstreet/cljs-uuid-utils "1.0.2"]
+                [venantius/accountant "0.2.5"]
+                [com.andrewmcveigh/cljs-time "0.5.2"]
+                ]
  :builds       {:app {:target     :browser
                       :output-dir "target/classes/cljsbuild/public/js"
                       :asset-path "/js"

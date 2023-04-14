@@ -18,12 +18,6 @@ in repl
 (kit/install-module :kit/cljs)
 ```
 
-
-old luminus leiningen
-
-```
-lein new luminus cledgers --to-dir . --force -- +jetty +postgres +re-frame +shadow-cljs +auth
-```
 ## dev prereqs
 
 - db setup
