@@ -1,0 +1,64 @@
+{:dal-version "3.0.2",
+ :differences
+ [{:type :diff-as-list.core/ValueDiff,
+   :path [],
+   :val-1 nil,
+   :val-2
+   {:cledgers-user
+    {:name "cledgers-user",
+     :fields
+     {:username
+      {:name "username",
+       :type :character,
+       :max-length 30,
+       :unique true},
+      :first-name
+      {:name "first-name", :type :character, :max-length 30},
+      :last-name {:name "last-name", :type :character, :max-length 30},
+      :email {:name "email", :type :character, :max-length 30},
+      :is-admin {:name "is-admin", :type :boolean, :default false},
+      :last-login {:name "last-login", :type :date-time, :null true},
+      :is-active {:name "is-active", :type :boolean, :default false},
+      :pass {:name "pass", :type :character, :max-length 300}}},
+    :payee
+    {:name "payee",
+     :fields
+     {:name
+      {:name "name", :type :character, :max-length 100, :unique true},
+      :time-created
+      {:name "time-created", :type :date-time, :default :current-time},
+      :created-by
+      {:name "created-by",
+       :type :foreign-key,
+       :references :cledgers-user}}},
+    :ledger
+    {:name "ledger",
+     :fields
+     {:name
+      {:name "name", :type :character, :max-length 100, :unique true},
+      :created-by
+      {:name "created-by",
+       :type :foreign-key,
+       :references :cledgers-user}}},
+    :xaction
+    {:name "xaction",
+     :fields
+     {:uuid
+      {:name "uuid", :type :character, :max-length 100, :unique true},
+      :description
+      {:name "description", :type :character, :max-length 250},
+      :payee {:name "payee", :type :foreign-key, :references :payee},
+      :amount
+      {:name "amount",
+       :type :numeric,
+       :total-length 10,
+       :decimal-places 2},
+      :date {:name "date", :type :date},
+      :time-created
+      {:name "time-created", :type :date-time, :default :current-time},
+      :created-by
+      {:name "created-by",
+       :type :foreign-key,
+       :references :cledgers-user},
+      :ledger
+      {:name "ledger", :type :foreign-key, :references :ledger}}}}}]}

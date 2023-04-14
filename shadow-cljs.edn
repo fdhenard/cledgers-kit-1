@@ -3,7 +3,8 @@
  :dependencies [[binaryage/devtools "1.0.3"]
                 [nrepl "0.8.3"]
                 [reagent "1.1.0"]
-                [cljs-ajax "0.8.4"]]
+                [cljs-ajax "0.8.4"]
+                #_[react/react "18.2.0"]]
  :builds       {:app {:target     :browser
                       :output-dir "target/classes/cljsbuild/public/js"
                       :asset-path "/js"

@@ -4,34 +4,39 @@
  :deps    {org.clojure/clojure {:mvn/version "1.11.1"}
 
            ;; Routing
- metosin/reitit {:mvn/version "0.5.18"}
+           metosin/reitit {:mvn/version "0.5.18"}
 
            ;; Ring
- metosin/ring-http-response {:mvn/version "0.9.3"}
- ring/ring-core {:mvn/version "1.9.5"}
- ring/ring-defaults {:mvn/version "0.3.3"}
+           metosin/ring-http-response {:mvn/version "0.9.3"}
+           ring/ring-core {:mvn/version "1.9.5"}
+           ring/ring-defaults {:mvn/version "0.3.3"}
 
            ;; Logging
- ch.qos.logback/logback-classic {:mvn/version "1.4.4"}
+           ch.qos.logback/logback-classic {:mvn/version "1.4.4"}
 
            ;; Data coercion
- luminus-transit/luminus-transit {:mvn/version "0.1.5"
-                                  :exclusions [com.cognitect/transit-clj]}
- metosin/muuntaja {:mvn/version "0.6.8"}
+           luminus-transit/luminus-transit {:mvn/version "0.1.5"
+                                            :exclusions [com.cognitect/transit-clj]}
+           metosin/muuntaja {:mvn/version "0.6.8"}
 
            ;; kit Libs
- io.github.kit-clj/kit-core {:mvn/version "1.0.3"}
- io.github.kit-clj/kit-undertow {:mvn/version "1.0.4"}
- io.github.kit-clj/kit-postgres {:mvn/version "1.0.3"}
- io.github.kit-clj/kit-sql-conman {:mvn/version "1.0.6"}
- io.github.kit-clj/kit-sql-migratus {:mvn/version "1.0.3"}
- selmer/selmer {:mvn/version "1.12.50"}
- luminus/ring-ttl-session {:mvn/version "0.3.3"}}
+           io.github.kit-clj/kit-core {:mvn/version "1.0.3"}
+           io.github.kit-clj/kit-undertow {:mvn/version "1.0.4"}
+           io.github.kit-clj/kit-postgres {:mvn/version "1.0.3"}
+           io.github.kit-clj/kit-sql-conman {:mvn/version "1.0.6"}
+           io.github.kit-clj/kit-sql-migratus {:mvn/version "1.0.3"}
+           selmer/selmer {:mvn/version "1.12.50"}
+           luminus/ring-ttl-session {:mvn/version "0.3.3"}
+
+           ;; added by fhenard
+           #_#_react/react {:mvn/version "18.2.0"}
+           buddy/buddy-hashers {:mvn/version "1.8.158"}
+           }
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/sha "e3e3532"
-                                :git/tag "v0.8.0"
-                                :git/url "https://github.com/clojure/tools.build.git"}
- babashka/fs {:mvn/version "0.1.11"}
- babashka/process {:mvn/version "0.3.11"}}
+                                                         :git/tag "v0.8.0"
+                                                         :git/url "https://github.com/clojure/tools.build.git"}
+                          babashka/fs {:mvn/version "0.1.11"}
+                          babashka/process {:mvn/version "0.3.11"}}
                    :ns-default build}
 
 

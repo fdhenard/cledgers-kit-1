@@ -59,9 +59,10 @@
   :options {}
   :filename "queries.sql"}
 
- :db.sql/migrations
- {:store :database
-  :db {:datasource #ig/ref :db.sql/connection}
-  :migrate-on-init? true}
+ ;; :db.sql/migrations
+ ;; {:store :database
+ ;;  :db {:datasource #ig/ref :db.sql/connection}
+ ;;  :migrate-on-init? true}
+ 
  :reitit.routes/pages {:base-path "",
                        :env #ig/ref :system/env}}

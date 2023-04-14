@@ -11,6 +11,9 @@
          nrepl     {:doc  "starts the nREPL"
                     :task (clojure {:dir "."} "-M:dev:nrepl")}
 
+         cider     {:doc "cider repl"
+                    :task (clojure {:dir "."} "-M:dev:cider")}
+
          test      {:doc  "runs tests"
                     :task (clojure {:dir "."} "-M:test")}
 
