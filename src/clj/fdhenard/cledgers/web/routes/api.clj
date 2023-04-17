@@ -1,14 +1,17 @@
 (ns fdhenard.cledgers.web.routes.api
   (:require
-    [fdhenard.cledgers.web.controllers.health :as health]
-    [fdhenard.cledgers.web.middleware.exception :as exception]
-    [fdhenard.cledgers.web.middleware.formats :as formats]
-    [integrant.core :as ig]
-    [reitit.coercion.malli :as malli]
-    [reitit.ring.coercion :as coercion]
-    [reitit.ring.middleware.muuntaja :as muuntaja]
-    [reitit.ring.middleware.parameters :as parameters]
-    [reitit.swagger :as swagger]))
+   [clojure.pprint :as pp]
+   [integrant.core :as ig]
+   [buddy.hashers :as hashers]
+   [reitit.coercion.malli :as malli]
+   [reitit.ring.coercion :as coercion]
+   [reitit.ring.middleware.muuntaja :as muuntaja]
+   [reitit.ring.middleware.parameters :as parameters]
+   [reitit.swagger :as swagger]
+   [fdhenard.cledgers.web.routes.utils :as route-utils]
+   [fdhenard.cledgers.web.controllers.health :as health]
+   [fdhenard.cledgers.web.middleware.exception :as exception]
+   [fdhenard.cledgers.web.middleware.formats :as formats]))
 
 (def route-data
   {:coercion   malli/coercion
@@ -38,7 +41,20 @@
            :swagger {:info {:title "fdhenard.cledgers API"}}
            :handler (swagger/create-swagger-handler)}}]
    ["/health"
-    {:get health/healthcheck!}]])
+    {:get health/healthcheck!}]
+   ["/login/"
+    {:post {:handler (fn [{:keys [body-params session] :as _req}]
+                       (let [#_ (pp/pprint {:body-params (:body-params req)})
+                             #_ (pp/pprint {:req req})
+                             {:keys [query-fn]} _opts
+                             #_ (pp/pprint {:_opts _opts})
+                             user (query-fn :get-user-by-uname {:username (:username body-params)})]
+                         (if-not (and user (hashers/check (:password body-params) (:pass user)))
+                           {:status 403}
+                           (let [user-res (dissoc user :pass)]
+                             {:status 200
+                              :session (assoc session :identity user-res)
+                              :body user-res}))))}}]])
 
 (derive :reitit.routes/api :reitit/routes)
 
