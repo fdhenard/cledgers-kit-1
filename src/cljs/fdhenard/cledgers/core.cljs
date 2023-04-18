@@ -8,7 +8,6 @@
             [reagent.core :as r]
             [reagent.dom :as d]
             [re-frame.core :as rf]
-            [secretary.core :as secretary]
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
             [markdown.core :refer [md->html]]
@@ -17,12 +16,15 @@
             [fdhenard.cledgers.handlers]
             [fdhenard.cledgers.subscriptions]
             [fdhenard.cledgers.pages.login :as login-page]
-            [accountant.core :as accountant]
             [fdhenard.cledgers.utils :as utils]
             [ajax.core :as ajax]
             [cljs-uuid-utils.core :as uuid]
             [cljs-time.core :as time]
-            [fdhenard.cledgers.bulma-typeahead :as typeahead])
+            [fdhenard.cledgers.bulma-typeahead :as typeahead]
+            [reitit.frontend.easy :as rfe]
+            [reitit.frontend.controllers :as rfc]
+            [reitit.frontend]
+            [reitit.coercion.schema :as rsc])
   (:import goog.History))
 
 ;; -------------------------
@@ -53,7 +55,8 @@
   [:div.container
    [:div.row
     [:div.col-md-12
-     [:img {:src (str js/context "/img/warning_clojure.png")}]]]])
+     #_[:img {:src (str js/context "/img/warning_clojure.png")}]
+     "warning! clojure"]]])
 
 
 
@@ -249,6 +252,8 @@
    ;; :login #'login-page/login-page
    })
 
+(defonce match (r/atom nil))
+
 (defn page []
   (let [user @(rf/subscribe [:user])]
     ;; (.log js/console "user: " (utils/pp user))
@@ -256,33 +261,57 @@
       [login-page/login-page]
       [:div
        [navbar]
-       [(pages @(rf/subscribe [:page]))]
+       (when @match
+         [(get-in @match [:data :view])])
        [:div.container "dater"
         [:ul
-         [:li "page: " @(rf/subscribe [:page])]
+         [:li "page: " (get-in @match [:data :name])]
          [:li "user: " user]]]])))
 
 ;; -------------------------
 ;; Routes
-(secretary/set-config! :prefix "#")
+;; (secretary/set-config! :prefix "#")
 
-(secretary/defroute "/" []
-  (.log js/console "home route called")
-  (rf/dispatch [:set-active-page :home])
-  ;; (let [user @(rf/subscribe [:user])]
-  ;;   (do
-  ;;     (.log js/console "user" (utils/pp user))
-  ;;     (if-not user
-  ;;       (rf/dispatch [:navigate "#/login"])
-  ;;       (rf/dispatch [:set-active-page :home]))))
-  )
+;; (secretary/defroute "/" []
+;;   (.log js/console "home route called")
+;;   (rf/dispatch [:set-active-page :home])
+;;   ;; (let [user @(rf/subscribe [:user])]
+;;   ;;   (do
+;;   ;;     (.log js/console "user" (utils/pp user))
+;;   ;;     (if-not user
+;;   ;;       (rf/dispatch [:navigate "#/login"])
+;;   ;;       (rf/dispatch [:set-active-page :home]))))
+;;   )
 
-(secretary/defroute "/luminus-home" []
-  (rf/dispatch [:set-active-page :lum-home]))
+;; (secretary/defroute "/luminus-home" []
+;;   (rf/dispatch [:set-active-page :lum-home]))
 
-(secretary/defroute "/about" []
-  (.log js/console "about route called")
-  (rf/dispatch [:set-active-page :about]))
+;; (secretary/defroute "/about" []
+;;   (.log js/console "about route called")
+;;   (rf/dispatch [:set-active-page :about]))
+
+
+(def routes
+  (reitit.frontend/router
+   ["/"
+    [""
+     {:name ::home
+      :view home-page
+      :controllers [{:start (.log js/console "controller - home - start")
+                     :stop (.log js/console "controller - home - stop")}]}]
+    ["luminus-home"
+     {:name ::luminus-home
+      :view luminus-home-page
+      :controllers [{:start (.log js/console "controller - luminus-home - start")
+                     :stop (.log js/console "controller - luminus-home - stop")}]}]
+    ["about"
+     {:name ::about
+      :view about-page
+      :controllers [{:start (.log js/console "controller - about - start")
+                     :stop (.log js/console "contorller - about - stop")}]}]]
+   {:data {:controllers [{:start (.log js/console "controller - root - start")
+                           :stop (.log js/console "conroller - root - stop")}]
+            :coercion rsc/coercion}}))
 
 ;; (secretary/defroute "/login" []
 ;;   (.log js/console "login route called")
@@ -339,4 +368,13 @@
   (d/render [#'page] (.getElementById js/document "app")))
 
 (defn ^:export ^:dev/once init! []
+  (rfe/start!
+   routes
+   (fn [new-match]
+     (swap! match (fn [old-match]
+                    (let [_ (pp/pprint {:old-match old-match
+                                        :new-match new-match})]
+                     (when new-match
+                       (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match)))))))
+   {:use-fragment true})
   (mount-root))
