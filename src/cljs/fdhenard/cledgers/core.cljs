@@ -56,7 +56,8 @@
    [:div.row
     [:div.col-md-12
      #_[:img {:src (str js/context "/img/warning_clojure.png")}]
-     "warning! clojure"]]])
+     [:img {:src "/img/warning_clojure.png"}]
+     #_"warning! clojure"]]])
 
 
 
