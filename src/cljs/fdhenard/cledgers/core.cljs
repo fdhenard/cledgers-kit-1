@@ -4,7 +4,8 @@
 ;;       [reagent.dom :as d]))
 
 (ns fdhenard.cledgers.core
-  (:require [cljs.pprint :as pp]
+  (:require [clojure.string :as string]
+            [cljs.pprint :as pp]
             [reagent.core :as r]
             [reagent.dom :as d]
             [re-frame.core :as rf]
@@ -77,7 +78,7 @@
        "oops"
        (-> time
            .toTimeString
-           (clojure.string/split " ")
+           (string/split " ")
            first)))])
 
 (defonce do-timer (js/setInterval dispatch-timer-event 1000))
@@ -126,7 +127,9 @@
                                 (.log js/console "error: " (utils/pp err)))})))
 
 (defn new-xaction-row []
-  (let [new-xaction (r/atom (empty-xaction))]
+  (let [new-xaction (r/atom (empty-xaction))
+        payee-ta-atom (r/atom (typeahead/new-typeahead-vals))
+        ledger-ta-atom (r/atom (typeahead/new-typeahead-vals))]
     (fn []
       [:tr {:key "new-one"}
        [:td
@@ -145,25 +148,31 @@
                  :value (get-in @new-xaction [:date :year])
                  :on-change #(swap! new-xaction assoc-in [:date :year] (-> % .-target .-value))}]]
        [:td [typeahead/typeahead-component
-             {:value (get-in @new-xaction [:payee :name])
+             {:ta-atom payee-ta-atom
               :query-func get-payees!
               :on-change (fn [selection]
-                           (let [payee {:name (:value selection)
+                           (let [payee-name (:value selection)
+                                 payee {:name payee-name
                                         :is-new (:is-new selection)
                                         :id (:id selection)}]
-                             (swap! new-xaction assoc :payee payee)))
+                             (swap! new-xaction assoc :payee payee)
+                             (reset! payee-ta-atom (merge
+                                                    @payee-ta-atom
+                                                    {:textbox-val payee-name}))))
               :item->text (fn [item]
-                            ;; (println "calling item->text")
-                            ;; (pp/pprint item)
                             (:name item))}]]
        [:td [typeahead/typeahead-component
-             {:value (get-in @new-xaction [:ledger :name])
+             {:ta-atom ledger-ta-atom
               :query-func get-ledgers!
               :on-change (fn [selection]
-                           (let [ledger {:name (:value selection)
+                           (let [ledger-name (:value selection)
+                                 ledger {:name ledger-name
                                          :is-new (:is-new selection)
                                          :id (:id selection)}]
-                             (swap! new-xaction assoc :ledger ledger)))
+                             (swap! new-xaction assoc :ledger ledger)
+                             (reset! ledger-ta-atom (merge
+                                                    @ledger-ta-atom
+                                                    {:textbox-val ledger-name}))))
               :item->text (fn [item]
                             (:name item))}
              ]]
@@ -185,26 +194,20 @@
                                           (js/parseInt (get-in @new-xaction [:date :day]))))
                   (swap! xactions assoc (:uuid xaction-to-add) xaction-to-add)
                   (reset! new-xaction (empty-xaction))
-                  ;; (.log js/console "new-xaction: " (utils/pp xaction-to-add))
                   (ajax/POST "/api/xactions/"
-                             {#_#_:format :edn
-                              #_#_:headers {"Accept" "application/transit+json"}
-                              :params {:xaction xaction-to-add}
+                             {:params {:xaction xaction-to-add}
                               :error-handler
                               (fn [err]
                                 (.log js/console "error: " (utils/pp err))
-                                ;; (.log js/console "xactions before dissoc: " (utils/pp @xactions))
-                                (swap! xactions dissoc (:uuid xaction-to-add))
-                                ;; (.log js/console "xactions after dissoc: " (utils/pp @xactions))
-                                )
+                                (swap! xactions dissoc (:uuid xaction-to-add)))
                               :handler
                               (fn [response]
                                 (let [added-xaction (get @xactions (:uuid xaction-to-add))
                                       added-xaction (dissoc added-xaction :add-waiting)]
                                   (swap! xactions assoc (:uuid xaction-to-add) added-xaction)
                                   (.log js/console "success adding xaction")
-                                  #_(pp/pprint response)
-                                  (reset! new-xaction (empty-xaction))))})))
+                                  (reset! payee-ta-atom (typeahead/new-typeahead-vals))
+                                  (reset! ledger-ta-atom (typeahead/new-typeahead-vals))))})))
               }
              "Add"]]])))
 
