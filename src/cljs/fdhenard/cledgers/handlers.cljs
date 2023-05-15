@@ -3,7 +3,7 @@
             [re-frame.core :refer [dispatch reg-event-db reg-event-fx reg-fx]]
             [cljs-uuid-utils.core :as uuid]
             [fdhenard.cledgers.utils :as utils]
-            [accountant.core :as accountant]
+            #_[accountant.core :as accountant]
             [ajax.core :as ajax]
             ))
 

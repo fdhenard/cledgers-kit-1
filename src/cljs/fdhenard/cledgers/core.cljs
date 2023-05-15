@@ -175,8 +175,10 @@
                      :on-change #(swap! new-xaction assoc :amount (-> % .-target .-value))}]]
        [:td [:button
              {:on-click
-              (fn [evt]
-                (let [xaction-to-add @new-xaction]
+              (fn [_evt]
+                (let [xaction-to-add (-> @new-xaction
+                                         xform-xaction-for-backend)
+                      _ (pp/pprint {:xaction-to-add xaction-to-add})]
                   (reset! last-date-used (time/local-date
                                           (js/parseInt (get-in @new-xaction [:date :year]))
                                           (js/parseInt (get-in @new-xaction [:date :month]))
@@ -185,7 +187,9 @@
                   (reset! new-xaction (empty-xaction))
                   ;; (.log js/console "new-xaction: " (utils/pp xaction-to-add))
                   (ajax/POST "/api/xactions/"
-                             {:params {:xaction (xform-xaction-for-backend xaction-to-add)}
+                             {#_#_:format :edn
+                              #_#_:headers {"Accept" "application/transit+json"}
+                              :params {:xaction xaction-to-add}
                               :error-handler
                               (fn [err]
                                 (.log js/console "error: " (utils/pp err))

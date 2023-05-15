@@ -37,6 +37,7 @@
            com.lucasbradstreet/cljs-uuid-utils {:mvn/version "1.0.2"}
            #_#_venantius/accountant {:mvn/version "0.2.5"}
            com.andrewmcveigh/cljs-time {:mvn/version "0.5.2"}
+           clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
            }
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/sha "e3e3532"
                                                          :git/tag "v0.8.0"
