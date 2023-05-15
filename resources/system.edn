@@ -66,4 +66,8 @@
  ;;  :migrate-on-init? true}
  
  :reitit.routes/pages {:base-path "",
-                       :env #ig/ref :system/env}}
+                       :env #ig/ref :system/env}
+
+ ;; :fdhenard.cledgers.dev.scripts/create-user
+ ;; {:query-fn #ig/ref :db.sql/query-fn}
+ }
