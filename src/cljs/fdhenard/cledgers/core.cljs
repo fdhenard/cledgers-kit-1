@@ -203,7 +203,8 @@
                                       added-xaction (dissoc added-xaction :add-waiting)]
                                   (swap! xactions assoc (:uuid xaction-to-add) added-xaction)
                                   (.log js/console "success adding xaction")
-                                  (cljs.pprint/pprint response)))})))
+                                  #_(pp/pprint response)
+                                  (reset! new-xaction (empty-xaction))))})))
               }
              "Add"]]])))
 

@@ -104,7 +104,7 @@
     {:get {:handler (fn [request]
                       (let [{:keys [query-fn]} _opts
                             q-parm (-> request :params :q)
-                            result (query-fn :get-payees {:q (str "%" q-parm)})]
+                            result (query-fn :get-payees {:q (str q-parm "%")})]
                         {:status 200
                          :body {:result result}}))}}]
    ["/ledgers"
@@ -112,7 +112,7 @@
                       (let [{:keys [query-fn]} _opts
                             q-parm (get-in request [:params :q])]
                         {:status 200
-                         :body {:result (query-fn :get-ledgers {:q (str "%" q-parm)})}}))}}]
+                         :body {:result (query-fn :get-ledgers {:q (str q-parm "%")})}}))}}]
    ["/xactions/" {:handler (handle-post-xactions _opts)}]])
 
 (derive :reitit.routes/api :reitit/routes)
