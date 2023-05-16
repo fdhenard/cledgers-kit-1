@@ -6,5 +6,6 @@
    :time-color "#f88"
    ;; :xaction-editing nil
    :xactions {}
-   :user (js->clj js/user :keywordize-keys true)
+   ;; :user (js->clj js/user :keywordize-keys true)
+   :user nil
    })
