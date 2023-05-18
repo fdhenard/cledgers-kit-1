@@ -17,3 +17,7 @@ modules/
 .clj-kondo/.cache/
 .calva/output-window/
 .lsp/.cache/
+
+#terraform
+.terraform
+terraform.tfstate*
