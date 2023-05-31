@@ -18,6 +18,6 @@ modules/
 .calva/output-window/
 .lsp/.cache/
 
-#terraform
+# terraform
 .terraform
 terraform.tfstate*

@@ -9,6 +9,10 @@ resource "aws_instance" "cledgers" {
   root_block_device {
     volume_size = 30
   }
+  key_name = "frank-key-pair"
+  vpc_security_group_ids = [
+    "sg-06fa06850ab31614a"
+  ]
 
   tags = {
     Name = "cledgers"

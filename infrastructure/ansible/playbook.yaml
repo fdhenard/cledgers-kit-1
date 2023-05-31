@@ -1,0 +1,42 @@
+# ansible-playbook -vvvv -i ~/Dropbox/Programming/ansible_inventory.yaml playbook.yaml
+
+
+- name: cledgers
+  hosts: cledgers
+  # roles:
+  #   - ansible-dokku
+  # vars:
+  #   dokku_plugins:
+  #     - name: clone
+  #       url: https://github.com/crisward/dokku-clone.git
+  #     - name: postgres
+  #       url: https://github.com/dokku/dokku-postgres.git    
+  tasks:
+    # - name: Ping my hosts
+    #   ansible.builtin.ping:
+    - name: get dokku file
+      ansible.builtin.get_url:
+        url: https://dokku.com/install/v0.30.3/bootstrap.sh
+        dest: /tmp/dokku_bootstrap.sh
+    - name: get dokku version
+      ansible.builtin.shell: "dokku version"
+      register: dokku_version
+    # - set_fact:
+    #     dokku_version: {{ ???.stdout }}
+    - name: execute dokku install
+      ansible.builtin.command:
+        cmd: "sudo DOKKU_TAG=v0.30.3 bash /tmp/dokku_bootstrap.sh"
+      when: not dokku_version.stdout.startswith("dokku version")
+    - name: get ssh keys
+      ansible.builtin.shell: "dokku ssh-keys:list"
+      ignore_errors: yes
+      register: dokku_ssh_keys
+    - name: add ssh key
+      when: dokku_ssh_keys.rc == 1
+      ansible.builtin.shell: "cat ~/.ssh/authorized_keys | sudo dokku ssh-keys:add admin"
+    - name: get dokku domains
+      ansible.builtin.shell: "dokku domains:report --global"
+      register: dokku_domains
+    - name: add dokku domain
+      ansible.builtin.shell: "dokku domains:set-global {{ inventory_hostname}}"
+      when: '"deployed any" in dokku_domains.stderr'

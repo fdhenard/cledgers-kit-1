@@ -85,7 +85,7 @@ Note that, just like with [CIDER](#cider), this alias runs nREPL during developm
 
 ## provision server
 
-- put credentials in env var
+- put credentials in env vars or in .zshrc
 
 	```
 	export AWS_ACCESS_KEY_ID=xxxx
@@ -102,3 +102,19 @@ Note that, just like with [CIDER](#cider), this alias runs nREPL during developm
 	terraform plan
 	terraform apply
 	```
+    
+- ssh into the server
+
+	- acquire the ip address from aws console
+	- do this
+
+	    ```sh
+	    ssh -i "Dropbox/Programming/frank-key-pair.pem" ubuntu@999.999.999.999
+	    ```
+	    
+
+- test
+
+    ```
+    ansible-galaxy install git+https://github.com/dokku/ansible-dokku.git
+    ```
