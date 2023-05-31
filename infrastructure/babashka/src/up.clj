@@ -104,6 +104,31 @@
 
   )
 
+(defn is-dokku-installed? [sshesh]
+  (let [cmd-res (-> (bbssh/exec sshesh
+                                "dokku version"
+                                {:out :string :err :string})
+                    deref)
+        the-re #"^dokku version (\S+)\n"
+        matches (re-matches the-re (:out cmd-res))
+        #_ (pp/pprint {:cmd-res cmd-res
+                      :matches matches})]
+    (and (= 0 (:exit cmd-res))
+         (not (nil? matches))
+         (= 2 (count matches)))))
+
+(comment
+
+  (re-matches #"^dokku version (\S+)" "something")
+  (re-matches #"^dokku version (\S+)\n" "dokku version 88.88.88\n")
+
+  (def sshesh (sshesh*))
+  (is-dokku-installed? sshesh)
+
+
+
+  )
+
 (defn get-dokku-ssh-keys [sshesh]
   (let [cmd-res (-> (bbssh/exec sshesh
                                 (str "dokku ssh-keys:list --format json")
@@ -114,7 +139,7 @@
       (-> cmd-res :out (json/parse-string true))
       (and (= 1 (:exit cmd-res))
            (let [out-lc (-> cmd-res :err string/lower-case)]
-            (string/includes? out-lc "no public keys found")))
+             (string/includes? out-lc "no public keys found")))
       []
       :else (throw (ex-info "unexpected result" {:cmd-res cmd-res})))))
 
@@ -146,7 +171,7 @@
                             {:out :string :err :string})
                 deref)
         _ (when (= 1 (:exit res))
-            (throw (ex-info "error adding key" {:cmd-res res})))]))
+            (throw (ex-info "error removing key" {:cmd-res res})))]))
 
 (comment
 
@@ -180,6 +205,49 @@
 
   )
 
+(defn get-global-domain [sshesh]
+  (let [$ (-> (bbssh/exec sshesh
+                          (str "dokku domains:report --global")
+                          {:out :string :err :string})
+              deref)
+        out-lines (-> $ :out (string/split #"\n"))
+        line-2 (nth out-lines 1)
+        line-2-re #"^\s+Domains global enabled:\s+(false|true)\s+$"
+        [_ domains-global-enabled-str] (re-matches line-2-re line-2)
+        domains-global-enabled? (Boolean/valueOf domains-global-enabled-str)]
+    (when domains-global-enabled?
+      (let [line-3 (nth out-lines 2)
+            line-3-re #"^\s+Domains global vhosts:\s+(\S+)\s+$"
+            [_ vhost] (re-matches line-3-re line-3)]
+        vhost))))
+
+(defn set-global-domain! [sshesh]
+  (let [cmd-res (-> (bbssh/exec sshesh
+                                (str "dokku domains:set-global " (get-in (config*) [:inventory :hostname]))
+                                {:out :string :err :string})
+                    deref)
+        #_ (pp/pprint {:cmd-res cmd-res})
+        _ (when (= 1 (:exit cmd-res))
+            (throw (ex-info "err setting global domain" {:cmd-res cmd-res})))]))
+
+(comment
+
+  (def sshesh (sshesh*))
+  (get-global-domain sshesh)
+
+  (def line2 "       Domains global enabled:        false                    ")
+  (def the-re #"^\s+Domains global enabled:\s+(false|true)\s+$")
+  (re-matches the-re line2)
+
+  (boolean "false")
+  (Boolean/valueOf "false")
+
+  (get-global-domain sshesh)
+
+  (set-global-domain! sshesh)
+
+  )
+
 (defn execute! []
   (let [sshesh (sshesh*)
         ;; install dokku
@@ -187,14 +255,16 @@
         _ (get-url! sshesh
                     {:dest bootstrap-fpath
                      :url "https://dokku.com/install/v0.30.6/bootstrap.sh"})
-        bootstrap-res
-        (-> (bbssh/exec sshesh
-                        (str "sudo DOKKU_TAG=v0.30.6 bash" bootstrap-fpath)
-                        {:out :string :err :string})
-            deref)
-        _ (pp/pprint {:bootstrap-res bootstrap-res})
+        _ (when-not (is-dokku-installed? sshesh)
+            (let [bootstrap-res
+                  (-> (bbssh/exec sshesh
+                                  (str "sudo DOKKU_TAG=v0.30.6 bash " bootstrap-fpath)
+                                  {:out :string :err :string})
+                      deref)
+                  _ (pp/pprint {:bootstrap-res bootstrap-res})]))
         ;; add admin ssh keys
-        _ (sync-dokku-ssh-admin-keys! sshesh)]))
+        _ (sync-dokku-ssh-admin-keys! sshesh)
+        _ (set-global-domain! sshesh)]))
 
 (comment
 
