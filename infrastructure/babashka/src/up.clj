@@ -270,6 +270,27 @@
 
   )
 
+(defn does-pg-service-exist? [sshesh pg-svc-name]
+  (let [cmd-res (ssh-exec sshesh (str "dokku postgres:exists " pg-svc-name))]
+    (= 0 (:exit cmd-res))))
+
+(comment
+
+  (does-pg-service-exist? (sshesh*) "cledgers")
+
+  )
+
+(defn install-pg-service! [sshesh pg-svc-name]
+  (let [cmd-res (ssh-exec sshesh (str "dokku postgres:create " pg-svc-name))
+        _ (when-not (= 0 (:exit cmd-res))
+            (throw (ex-info "error insalling pg svc" {:cmd-res cmd-res})))]))
+
+(comment
+
+  (install-pg-service! (sshesh*) "cledgers")
+
+  )
+
 (defn execute! []
   (let [sshesh (sshesh*)
         ;; install dokku
@@ -285,7 +306,9 @@
         _ (sync-dokku-ssh-admin-keys! sshesh)
         _ (set-global-domain! sshesh)
         _ (when-not (is-postgresql-plugin-installed? sshesh)
-            (install-postgresql-plugin! sshesh))]))
+            (install-postgresql-plugin! sshesh))
+        _ (when-not (does-pg-service-exist? sshesh "cledgers")
+            (install-pg-service! sshesh "cledgers"))]))
 
 (comment
 
