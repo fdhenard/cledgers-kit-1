@@ -230,6 +230,46 @@
 
   )
 
+(defn is-postgresql-plugin-installed? [sshesh]
+  (let [cmd-res (ssh-exec sshesh "dokku plugin:list")
+        plugin-out-lines (-> cmd-res
+              :out
+              (string/split #"\n"))
+        the-re #"^\s{2}(\S+)\s+.+"
+        line->plugin-name
+        (fn [line]
+          (let [matches (re-matches the-re line)
+                _ (when-not matches
+                    (throw (ex-info "unexpected result" {:line line})))]
+            (nth matches 1)))
+        installed-plugins (->> plugin-out-lines
+                               (map line->plugin-name)
+                               set)]
+    (contains? installed-plugins "postgres")))
+
+
+
+(comment
+
+  (is-postgresql-plugin-installed? (sshesh*))
+
+  (def test-str "  00_dokku-standard    0.30.6 enabled    dokku core standard plugin")
+  (def the-re #"^\s{2}(\S+)\s+.+")
+  (re-matches the-re test-str)
+
+  )
+
+(defn install-postgresql-plugin! [sshesh]
+  (let [cmd-res (ssh-exec sshesh "sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git")
+        _ (when-not (= 0 (:exit cmd-res))
+            (throw (ex-info "error installing postgresql plugin" {:cmd-res cmd-res})))]))
+
+(comment
+
+  (install-postgresql-plugin! (sshesh*))
+
+  )
+
 (defn execute! []
   (let [sshesh (sshesh*)
         ;; install dokku
@@ -243,7 +283,9 @@
                   _ (pp/pprint {:bootstrap-res bootstrap-res})]))
         ;; add admin ssh keys
         _ (sync-dokku-ssh-admin-keys! sshesh)
-        _ (set-global-domain! sshesh)]))
+        _ (set-global-domain! sshesh)
+        _ (when-not (is-postgresql-plugin-installed? sshesh)
+            (install-postgresql-plugin! sshesh))]))
 
 (comment
 
