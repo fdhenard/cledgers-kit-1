@@ -274,9 +274,11 @@
   (let [cmd-res (ssh-exec sshesh (str "dokku postgres:exists " pg-svc-name))]
     (= 0 (:exit cmd-res))))
 
+(def pg-service-name "cledgers")
+
 (comment
 
-  (does-pg-service-exist? (sshesh*) "cledgers")
+  (does-pg-service-exist? (sshesh*) pg-service-name)
 
   )
 
@@ -287,7 +289,47 @@
 
 (comment
 
-  (install-pg-service! (sshesh*) "cledgers")
+  (install-pg-service! (sshesh*) pg-service-name)
+
+  )
+
+(defn get-pg-exposed-ports [sshesh svc-name]
+  (let [cmd-res (ssh-exec sshesh (str "dokku postgres:info " svc-name))
+        out-lines (string/split (:out cmd-res) #"\n")
+        exposed-port-line-idx
+        (loop [idx 0]
+          (if (> idx (count out-lines))
+            nil
+            (let [curr-line (nth out-lines idx)]
+              (if (string/includes? (string/lower-case curr-line) "exposed ports:")
+                idx
+                (recur (inc idx))))))
+        _ (when (nil? exposed-port-line-idx)
+            (throw (ex-info "exposed ports line not found" {:out-lines out-lines})))
+        exposed-port-line (nth out-lines exposed-port-line-idx)
+        the-re #"^\s{7}Exposed ports:\s{7}(\S+)\s+$"
+        matches (re-matches the-re exposed-port-line)]
+    (nth matches 1)))
+
+(comment
+
+  (get-pg-exposed-ports (sshesh*) pg-service-name)
+
+  (def the-re #"^\s{7}Exposed ports:\s{7}(\S+)\s+$")
+  (def test-line "       Exposed ports:       -                        ")
+  (re-matches the-re test-line)
+
+  )
+
+(defn expose-pg-port [sshesh svc-name target-port]
+  (let [cmd-res (ssh-exec sshesh (str "dokku postgres:expose " svc-name " " target-port))
+        _ (when-not (= 0 (:exit cmd-res))
+            (throw (ex-info "error exposing port" {:cmd-res cmd-res})))]))
+
+(comment
+
+  (expose-pg-port (sshesh*) pg-service-name 5432)
+
 
   )
 
@@ -307,8 +349,11 @@
         _ (set-global-domain! sshesh)
         _ (when-not (is-postgresql-plugin-installed? sshesh)
             (install-postgresql-plugin! sshesh))
-        _ (when-not (does-pg-service-exist? sshesh "cledgers")
-            (install-pg-service! sshesh "cledgers"))]))
+        _ (when-not (does-pg-service-exist? sshesh pg-service-name)
+            (install-pg-service! sshesh pg-service-name))
+        _ (when-not (= "5432->5432" (get-pg-exposed-ports sshesh pg-service-name))
+            (println "exposing port")
+            (expose-pg-port sshesh pg-service-name 5432))]))
 
 (comment
 
