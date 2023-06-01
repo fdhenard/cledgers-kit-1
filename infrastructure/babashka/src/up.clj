@@ -22,13 +22,15 @@
 (defn private-key-path* []
   (or (System/getenv "SSH_PRIVATE_KEY_PATH")
       (let [user-home (System/getProperty "user.home")]
-        (str user-home "/.ssh/id_rsa"))))
+        (str user-home "/.ssh/id_ed25519"))))
 
 (comment
 
   (private-key-path*)
 
   (config*)
+
+  (System/getenv "BB_IAC_CONFIG_PATH")
 
 
   )
@@ -41,7 +43,14 @@
 (defn sshesh* []
   (bbssh/ssh (get-in (config*) [:inventory :hostname])
              {:username (get-in (config*) [:inventory :username])
-              :identity (private-key-path*)}))
+              :identity (private-key-path*)
+              :accept-host-key :new}))
+
+(defn ssh-exec [sshesh cmd-str]
+  (-> sshesh
+      (bbssh/exec cmd-str
+                  {:out :string :err :string})
+      deref))
 
 (comment
 
@@ -52,8 +61,7 @@
 
   (try
     (-> (sshesh*)
-        (bbssh/exec "echo 'I am running remotely'" {:out :string})
-        deref
+        (ssh-exec "echo 'I am running remotely'")
         :out
         )
     (catch clojure.lang.ExceptionInfo ei
@@ -65,11 +73,7 @@
   )
 
 (defn file-exists? [sshesh config]
-  (let [res (-> (bbssh/exec sshesh
-                            (str "ls " (:dest config))
-                            {:out :string
-                             :err :string})
-                deref)]
+  (let [res (ssh-exec sshesh (str "ls " (:dest config)))]
     (case (:exit res)
       0 true
       2 false
@@ -87,11 +91,7 @@
 
 (defn get-url! [sshesh config]
   (when-not (file-exists? sshesh config)
-    (let [res (-> (bbssh/exec sshesh
-                              (str "wget -NO " (:dest config) " " (:url config))
-                              {:out :string
-                               :err :string})
-                  deref)
+    (let [res (ssh-exec sshesh (str "wget -NO " (:dest config) " " (:url config)))
           _ (when-not (= 0 (:exit res))
               (throw (ex-info "unexpected :exit val from exec" {:res res})))])))
 
@@ -105,10 +105,7 @@
   )
 
 (defn is-dokku-installed? [sshesh]
-  (let [cmd-res (-> (bbssh/exec sshesh
-                                "dokku version"
-                                {:out :string :err :string})
-                    deref)
+  (let [cmd-res (ssh-exec sshesh "dokku version")
         the-re #"^dokku version (\S+)\n"
         matches (re-matches the-re (:out cmd-res))
         #_ (pp/pprint {:cmd-res cmd-res
@@ -130,10 +127,7 @@
   )
 
 (defn get-dokku-ssh-keys [sshesh]
-  (let [cmd-res (-> (bbssh/exec sshesh
-                                (str "dokku ssh-keys:list --format json")
-                                {:out :string :err :string})
-                    deref)]
+  (let [cmd-res (ssh-exec sshesh (str "dokku ssh-keys:list --format json"))]
     (cond
       (= 0 (:exit cmd-res))
       (-> cmd-res :out (json/parse-string true))
@@ -157,19 +151,13 @@
         pubkey (get-in (config*) [:ssh-pub-keys config-key-id])
         _ (when-not pubkey
             (throw (ex-info "pubkey not found" {:config-key-id config-key-id})))
-        res (-> (bbssh/exec sshesh
-                            (str "echo \"" pubkey "\" | sudo dokku ssh-keys:add " (name key-id))
-                            {:out :string :err :string})
-                deref)
+        res (ssh-exec sshesh (str "echo \"" pubkey "\" | sudo dokku ssh-keys:add " (name key-id)))
         #_ (pp/pprint {:res res})
         _ (when (= 1 (:exit res))
             (throw (ex-info "error adding key" {:cmd-res res})))]))
 
 (defn remove-dokku-ssh-admin-key! [sshesh key-id]
-  (let [res (-> (bbssh/exec sshesh
-                            (str "sudo dokku ssh-keys:remove " (name key-id))
-                            {:out :string :err :string})
-                deref)
+  (let [res (ssh-exec sshesh (str "sudo dokku ssh-keys:remove " (name key-id)))
         _ (when (= 1 (:exit res))
             (throw (ex-info "error removing key" {:cmd-res res})))]))
 
@@ -206,10 +194,7 @@
   )
 
 (defn get-global-domain [sshesh]
-  (let [$ (-> (bbssh/exec sshesh
-                          (str "dokku domains:report --global")
-                          {:out :string :err :string})
-              deref)
+  (let [$ (ssh-exec sshesh "dokku domains:report --global")
         out-lines (-> $ :out (string/split #"\n"))
         line-2 (nth out-lines 1)
         line-2-re #"^\s+Domains global enabled:\s+(false|true)\s+$"
@@ -222,10 +207,7 @@
         vhost))))
 
 (defn set-global-domain! [sshesh]
-  (let [cmd-res (-> (bbssh/exec sshesh
-                                (str "dokku domains:set-global " (get-in (config*) [:inventory :hostname]))
-                                {:out :string :err :string})
-                    deref)
+  (let [cmd-res (ssh-exec sshesh (str "dokku domains:set-global " (get-in (config*) [:inventory :hostname])))
         #_ (pp/pprint {:cmd-res cmd-res})
         _ (when (= 1 (:exit cmd-res))
             (throw (ex-info "err setting global domain" {:cmd-res cmd-res})))]))
@@ -257,10 +239,7 @@
                      :url "https://dokku.com/install/v0.30.6/bootstrap.sh"})
         _ (when-not (is-dokku-installed? sshesh)
             (let [bootstrap-res
-                  (-> (bbssh/exec sshesh
-                                  (str "sudo DOKKU_TAG=v0.30.6 bash " bootstrap-fpath)
-                                  {:out :string :err :string})
-                      deref)
+                  (ssh-exec sshesh (str "sudo DOKKU_TAG=v0.30.6 bash " bootstrap-fpath))
                   _ (pp/pprint {:bootstrap-res bootstrap-res})]))
         ;; add admin ssh keys
         _ (sync-dokku-ssh-admin-keys! sshesh)
