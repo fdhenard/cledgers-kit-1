@@ -34,14 +34,16 @@ in repl
             - `$ cd ~/dev/repos/declarative-ddl`
             - dry run
 
-                    $ lein run -d ../cledgers-luminus -b "postgresql://localhost/cledgers_luminus?user=cledgers_luminus" migrate
+                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers_luminus" migrate
 
             - execute:
 
-                    $ lein run -d ../cledgers-luminus -b "postgresql://localhost/cledgers_luminus?user=cledgers_luminus" -e migrate
+                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers_luminus" -e migrate
 
     - insert self as user
         - eval the code in the Rich Comment of `fdhenard.cledgers.dev.scripts`
+
+- install nvm `brew install nvm` and the latest LTS version of node
 
 ## REPLs
 
@@ -85,6 +87,14 @@ Note that, just like with [CIDER](#cider), this alias runs nREPL during developm
 
 ## provision server
 
+### prereqs
+
+- babashka installed
+
+### steps
+
+#### terraform
+
 - put credentials in env vars or in .zshrc
 
 	```
@@ -102,7 +112,9 @@ Note that, just like with [CIDER](#cider), this alias runs nREPL during developm
 	terraform plan
 	terraform apply
 	```
-    
+
+#### babashka
+
 - ssh into the server
 
 	- acquire the ip address from aws console
@@ -112,9 +124,6 @@ Note that, just like with [CIDER](#cider), this alias runs nREPL during developm
 	    ssh -i "Dropbox/Programming/frank-key-pair.pem" ubuntu@999.999.999.999
 	    ```
 	    
-
-- test
-
-    ```
-    ansible-galaxy install git+https://github.com/dokku/ansible-dokku.git
-    ```
+- add machine ssh key to the server `.ssh/authorized_keys`
+- execute babashka code in `infrastructure/babashka/src/up.clj`
+- run migrations - see dev instructions

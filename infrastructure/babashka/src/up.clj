@@ -181,9 +181,11 @@
                                 (map keyword)
                                 set)
         keynames-to-add (set/difference available-keynames existing-keynames)
+        _ (pp/pprint {:keynames-to-add keynames-to-add})
         _ (doseq [keyname keynames-to-add]
             (add-dokku-ssh-admin-key! sshesh keyname))
         keynames-to-delete (set/difference existing-keynames available-keynames)
+        _ (pp/pprint {:keynames-to-delete keynames-to-delete})
         _ (doseq [keyname keynames-to-delete]
             (remove-dokku-ssh-admin-key! sshesh keyname))]))
 
