@@ -6,6 +6,7 @@ COPY . /
 
 #install node
 ENV NODE_VERSION=18.16.0
+RUN apt-get update && apt-get install -y apt-transport-https
 RUN apt install -y curl
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 ENV NVM_DIR=/root/.nvm
