@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cledgers
+  labels:
+    app: cledgers
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cledgers
+  template:
+    metadata:
+      labels:
+        app: cledgers
+    spec:
+      containers:
+      - name: cledgers
+        image: registry.digitalocean.com/fdhenard/cledgers-kit-1:latest
+        ports:
+        - containerPort: 80
