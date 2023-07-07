@@ -47,13 +47,24 @@
  {:routes #ig/ref :router/routes}
 
  :db.sql/connection
- #profile {:dev {:jdbc-url "jdbc:postgresql://localhost/cledgers?user=cledgers&password=cledgers"}
+ #profile {:dev {#_#_:jdbc-url "jdbc:postgresql://localhost/cledgers?user=cledgers&password=cledgers"
+                 :adapter "postgresql"
+                 :username "cledgers"
+                 :password "cledgers"
+                 :database-name "cledgers"}
            :test {}
-           :prod {:jdbc-url #env JDBC_URL
-                  :init-size 1
-                  :min-idle 1
-                  :max-idle 8
-                  :max-active 32}}
+           :prod {#_#_:jdbc-url #env JDBC_URL
+                  :adapter "postgresql"
+                  :database-name "cledgers_non_prod"
+                  :username #ig/ref :secrets.db/username
+                  :password #ig/ref :secrets.db/password
+                  :server-name #ig/ref :secrets.db/hostname
+                  :port-number #ig/ref :secrets.db/port
+                  #_#_:init-size 1
+                  :minimum-idle 1
+                  #_#_:max-idle 8
+                  #_#_:max-active 32
+                  :maximum-pool-size 32}}
 
  :db.sql/query-fn
  {:conn #ig/ref :db.sql/connection
@@ -70,4 +81,18 @@
 
  ;; :fdhenard.cledgers.dev.scripts/create-user
  ;; {:query-fn #ig/ref :db.sql/query-fn}
+
+ :secrets/all-secrets
+ {:env #ig/ref :system/env
+  #_#_:env :prod}
+
+ :secrets.db/hostname
+ {:all-secrets #ig/ref :secrets/all-secrets}
+ :secrets.db/password
+ {:all-secrets #ig/ref :secrets/all-secrets}
+ :secrets.db/port
+ {:all-secrets #ig/ref :secrets/all-secrets}
+ :secrets.db/username
+ {:all-secrets #ig/ref :secrets/all-secrets}
+ 
  }

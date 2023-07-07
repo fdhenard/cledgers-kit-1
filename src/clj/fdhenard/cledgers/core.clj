@@ -15,7 +15,11 @@
     ;; Routes
     [fdhenard.cledgers.web.routes.api]
     
-    [fdhenard.cledgers.web.routes.pages])
+    [fdhenard.cledgers.web.routes.pages]
+
+    ;; secrets
+    [fdhenard.cledgers.secrets]
+    )
   (:gen-class))
 
 ;; log uncaught exceptions in threads

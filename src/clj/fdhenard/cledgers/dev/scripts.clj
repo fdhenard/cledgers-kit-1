@@ -23,6 +23,7 @@
 (comment
 
   (require '[integrant.repl.state :as state])
+  state/system
 
   (create-user-s!
    state/system
@@ -33,5 +34,7 @@
     :pass "tanky"
     :is-admin? true
     :is-active? true})
+
+  (hashers/derive "")
 
   )

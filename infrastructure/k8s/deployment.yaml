@@ -15,7 +15,18 @@ spec:
         app: cledgers
     spec:
       containers:
-      - name: cledgers
-        image: registry.digitalocean.com/fdhenard/cledgers-kit-1:latest
-        ports:
-        - containerPort: 80
+        - name: cledgers
+          image: registry.digitalocean.com/fdhenard/cledgers:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: AKEYLESS_ACCESS_ID
+              valueFrom:
+                secretKeyRef:
+                  name: akeyless-creds
+                  key: akeyless-access-id
+            - name: AKEYLESS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: akeyless-creds
+                  key: akeyless-access-key

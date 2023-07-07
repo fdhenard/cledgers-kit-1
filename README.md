@@ -34,11 +34,11 @@ in repl
             - `$ cd ~/dev/repos/declarative-ddl`
             - dry run
 
-                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers_luminus" migrate
+                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers" migrate
 
             - execute:
 
-                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers_luminus" -e migrate
+                    $ lein run -d ../cledgers-kit-1 -b "postgresql://localhost/cledgers?user=cledgers" -e migrate
 
     - insert self as user
         - eval the code in the Rich Comment of `fdhenard.cledgers.dev.scripts`
