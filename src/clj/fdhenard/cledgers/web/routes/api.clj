@@ -100,6 +100,13 @@
                              {:status 200
                               :session (assoc session :identity user-res)
                               :body user-res}))))}}]
+   ["/user"
+    {:get {:handler (fn [request]
+                      (let [user (get-in request [:session :identity])]
+                        (if-not user
+                          {:status 401}
+                          {:status 200
+                           :body user})))}}]
    ["/payees"
     {:get {:handler (fn [request]
                       (let [{:keys [query-fn]} _opts

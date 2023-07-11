@@ -374,6 +374,7 @@
 ;; Initialize app
 
 (defn ^:dev/after-load mount-root []
+  (rf/dispatch [:fetch-user])
   (d/render [#'page] (.getElementById js/document "app")))
 
 (defn ^:export ^:dev/once init! []

@@ -1,24 +1,23 @@
 (ns fdhenard.cledgers.handlers
   (:require [fdhenard.cledgers.db :as db]
-            [re-frame.core :refer [dispatch reg-event-db reg-event-fx reg-fx]]
+            [re-frame.core :as rf]
             [cljs-uuid-utils.core :as uuid]
             [fdhenard.cledgers.utils :as utils]
-            #_[accountant.core :as accountant]
             [ajax.core :as ajax]
             ))
 
-(reg-event-db
+(rf/reg-event-db
   :initialize-db
   (fn [_ _]
     db/default-db))
 
-(reg-event-db
+(rf/reg-event-db
   :set-active-page
   (fn [db [_ page]]
     (.log js/console "setting active page to " page)
     (assoc db :page page)))
 
-(reg-event-db
+(rf/reg-event-db
   :set-docs
   (fn [db [_ docs]]
     (assoc db :docs docs)))
@@ -39,7 +38,7 @@
 ;;     :xactions {}
 ;;     :user nil}))
 
-(reg-event-db
+(rf/reg-event-db
  :timer
  (fn [db [_ new-time]]
    (assoc db :time new-time)))
@@ -65,12 +64,25 @@
 ;;    (accountant/navigate! path)
 ;;    {}))
 
-(reg-event-db
+(rf/reg-event-db
  :login
  (fn [db [_ user]]
+   (.log js/console "login event")
    (assoc db :user user)))
 
-(reg-event-db
+(rf/reg-event-db
  :logout
  (fn [db _]
    (dissoc db :user)))
+
+(rf/reg-event-fx
+ :fetch-user
+ (fn [_evt [_ a]]
+   (.log js/console "fetching user")
+   (ajax/GET "/api/user"
+             {#_#_:params {:username @username :password @password}
+              :error-handler #(.log js/console "error" (utils/pp %))
+              :handler #(do
+                          ;; (.log js/console "res:" (utils/pp %))
+                          (rf/dispatch [:login %]))})
+   {}))
