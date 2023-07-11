@@ -30,3 +30,46 @@ spec:
                 secretKeyRef:
                   name: akeyless-creds
                   key: akeyless-access-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cledgers-service
+  # namespace: tutorial
+  labels:
+    app: cledgers
+spec:
+  selector:
+    app: cledgers
+    # app.kubernetes.io/name: tutorial-service
+    # app.kubernetes.io/part-of: tutorial
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cledgers-ingress
+  # namespace: tutorial
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-issuer
+spec:
+  rules:
+    - host: cledgers.henard.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cledgers-service
+                port:
+                  number: 80
+  tls:
+    - secretName: cledgers-cert
+      hosts:
+        - cledgers.henard.org
