@@ -1,19 +1,12 @@
-;; (ns fdhenard.cledgers.core
-;;     (:require
-;;       [reagent.core :as r]
-;;       [reagent.dom :as d]))
-
 (ns fdhenard.cledgers.core
   (:require [clojure.string :as string]
             [cljs.pprint :as pp]
             [reagent.core :as r]
             [reagent.dom :as d]
             [re-frame.core :as rf]
-            [goog.events :as events]
-            [goog.history.EventType :as HistoryEventType]
+            ;; [goog.events :as events]
+            ;; [goog.history.EventType :as HistoryEventType]
             [markdown.core :refer [md->html]]
-            [ajax.core :refer [GET POST]]
-            [fdhenard.cledgers.ajax :refer [load-interceptors!]]
             [fdhenard.cledgers.handlers]
             [fdhenard.cledgers.subscriptions]
             [fdhenard.cledgers.pages.login :as login-page]
@@ -26,7 +19,7 @@
             [reitit.frontend.controllers :as rfc]
             [reitit.frontend]
             [reitit.coercion.schema :as rsc])
-  (:import goog.History))
+  #_(:import goog.History))
 
 ;; -------------------------
 ;; Views
@@ -63,9 +56,6 @@
 
 
 
-;; fdh
-
-
 (defn dispatch-timer-event []
   (let [now (js/Date.)]
     (rf/dispatch [:timer now])))
@@ -91,13 +81,11 @@
                                :year (time/year @last-date-used)}
                         :description ""
                         :amount ""
-                        :add-waiting true})
-
-(def xactions (r/atom {}))
+                        :add-waiting? true})
 
 (defn xform-xaction-for-backend [xaction]
   (as-> xaction $
-    (dissoc $ :add-waiting)))
+    (dissoc $ :add-waiting?)))
 
 (defn get-payees! [q-str callback]
   #_(println "callback:" callback)
@@ -174,8 +162,7 @@
                                                     @ledger-ta-atom
                                                     {:textbox-val ledger-name}))))
               :item->text (fn [item]
-                            (:name item))}
-             ]]
+                            (:name item))}]]
        [:td [:input {:type "text"
                      :value (:description @new-xaction)
                      :on-change #(swap! new-xaction assoc :description (-> % .-target .-value))}]]
@@ -192,22 +179,20 @@
                                           (js/parseInt (get-in @new-xaction [:date :year]))
                                           (js/parseInt (get-in @new-xaction [:date :month]))
                                           (js/parseInt (get-in @new-xaction [:date :day]))))
-                  (swap! xactions assoc (:uuid xaction-to-add) xaction-to-add)
+                  (rf/dispatch [:add-transaction xaction-to-add])
                   (reset! new-xaction (empty-xaction))
                   (ajax/POST "/api/xactions/"
                              {:params {:xaction xaction-to-add}
                               :error-handler
                               (fn [err]
                                 (.log js/console "error: " (utils/pp err))
-                                (swap! xactions dissoc (:uuid xaction-to-add)))
+                                (rf/dispatch [:remove-transaction (:uuid xaction-to-add)]))
                               :handler
-                              (fn [response]
-                                (let [added-xaction (get @xactions (:uuid xaction-to-add))
-                                      added-xaction (dissoc added-xaction :add-waiting)]
-                                  (swap! xactions assoc (:uuid xaction-to-add) added-xaction)
-                                  (.log js/console "success adding xaction")
-                                  (reset! payee-ta-atom (typeahead/new-typeahead-vals))
-                                  (reset! ledger-ta-atom (typeahead/new-typeahead-vals))))})))
+                              (fn [_response]
+                                (rf/dispatch [:transaction-fully-added (:uuid xaction-to-add)])
+                                (.log js/console "success adding xaction")
+                                (reset! payee-ta-atom (typeahead/new-typeahead-vals))
+                                (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))})))
               }
              "Add"]]])))
 
@@ -229,18 +214,19 @@
        [:th "controls"]]]
      [:tbody
       [new-xaction-row]
-      (for [[_ xaction] @xactions]
-        (let [#_ (.log js/console "xaction: " (utils/pp xaction))
-              class (when (:add-waiting xaction)
-                      "rowhighlight")]
-          [:tr {:key (:uuid xaction)
-                :class class}
-           [:td (let [date (:date xaction)]
-                  (str (:month date) "/" (:day date) "/" (:year date)))]
-           [:td (get-in xaction [:payee :name])]
-           [:td (get-in xaction [:ledger :name])]
-           [:td (:description xaction)]
-           [:td (:amount xaction)]]))]]]])
+      (let [xactions @(rf/subscribe [:transactions])]
+       (for [[_ xaction] xactions]
+         (let [#_ (.log js/console "xaction: " (utils/pp xaction))
+               class (when (:add-waiting? xaction)
+                       "rowhighlight")]
+           [:tr {:key (:uuid xaction)
+                 :class class}
+            [:td (let [date (:date xaction)]
+                   (str (:month date) "/" (:day date) "/" (:year date)))]
+            [:td (get-in xaction [:payee :name])]
+            [:td (get-in xaction [:ledger :name])]
+            [:td (:description xaction)]
+            [:td (:amount xaction)]])))]]]])
 
 
 
@@ -279,26 +265,6 @@
 
 ;; -------------------------
 ;; Routes
-;; (secretary/set-config! :prefix "#")
-
-;; (secretary/defroute "/" []
-;;   (.log js/console "home route called")
-;;   (rf/dispatch [:set-active-page :home])
-;;   ;; (let [user @(rf/subscribe [:user])]
-;;   ;;   (do
-;;   ;;     (.log js/console "user" (utils/pp user))
-;;   ;;     (if-not user
-;;   ;;       (rf/dispatch [:navigate "#/login"])
-;;   ;;       (rf/dispatch [:set-active-page :home]))))
-;;   )
-
-;; (secretary/defroute "/luminus-home" []
-;;   (rf/dispatch [:set-active-page :lum-home]))
-
-;; (secretary/defroute "/about" []
-;;   (.log js/console "about route called")
-;;   (rf/dispatch [:set-active-page :about]))
-
 
 (def routes
   (reitit.frontend/router
@@ -317,15 +283,10 @@
      {:name ::about
       :view about-page
       :controllers [{:start (.log js/console "controller - about - start")
-                     :stop (.log js/console "contorller - about - stop")}]}]]
+                     :stop (.log js/console "controller - about - stop")}]}]]
    {:data {:controllers [{:start (.log js/console "controller - root - start")
-                           :stop (.log js/console "conroller - root - stop")}]
+                           :stop (.log js/console "controller - root - stop")}]
             :coercion rsc/coercion}}))
-
-;; (secretary/defroute "/login" []
-;;   (.log js/console "login route called")
-;;   (rf/dispatch [:set-active-page :login]))
-
 
 ;; ;; -------------------------
 ;; ;; History
@@ -375,6 +336,7 @@
 
 (defn ^:dev/after-load mount-root []
   (rf/dispatch [:fetch-user])
+  (rf/dispatch [:fetch-transactions])
   (d/render [#'page] (.getElementById js/document "app")))
 
 (defn ^:export ^:dev/once init! []

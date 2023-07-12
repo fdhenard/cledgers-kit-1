@@ -40,6 +40,7 @@
            clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
 
            io.akeyless/akeyless-java {:mvn/version "3.3.9"}
+           metosin/malli {:mvn/version "0.11.0"}
            }
  :mvn/repos {"akeyless" {:url "https://akeyless.jfrog.io/artifactory/akeyless-java"
                          :snapshots {:enabled false}}}

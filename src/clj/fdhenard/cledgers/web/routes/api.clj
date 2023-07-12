@@ -120,7 +120,17 @@
                             q-parm (get-in request [:params :q])]
                         {:status 200
                          :body {:result (query-fn :get-ledgers {:q (str q-parm "%")})}}))}}]
-   ["/xactions/" {:handler (handle-post-xactions _opts)}]])
+   ["/xactions/"
+    {:post {:handler (handle-post-xactions _opts)}
+     :get {:handler
+           (fn [_request]
+             (let [{:keys [query-fn]} _opts
+                   xactions (->> (query-fn :get-transactions {})
+                                 (map (fn [xaction]
+                                        #_(pp/pprint {:xaction xaction})
+                                        (assoc xaction :amount (str (:amount xaction))))))]
+               {:status 200
+                :body {:result xactions}}))}}]])
 
 (derive :reitit.routes/api :reitit/routes)
 

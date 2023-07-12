@@ -4,6 +4,10 @@
             [cljs-uuid-utils.core :as uuid]
             [fdhenard.cledgers.utils :as utils]
             [ajax.core :as ajax]
+            [malli.core :as malli]
+            [fdhenard.cledgers.spec :as cledgers-spec]
+            [cljs-time.core :as time]
+            [cljs-time.coerce :as time-coerce]
             ))
 
 (rf/reg-event-db
@@ -43,27 +47,6 @@
  (fn [db [_ new-time]]
    (assoc db :time new-time)))
 
-;; (reg-event-db
-;;  :add-xaction
-;;  (fn [db [_ new-xaction]]
-;;    (let [new-id (str (uuid/make-random-uuid))]
-;;      ;; (.log js/console "db" (utils/pp db))
-;;      (.log js/console "stuffs:" (utils/pp {:new-id new-id
-;;                                            :new-xaction new-xaction}))
-;;      (let [reframe-res (-> db
-;;                            (assoc-in [:xactions new-id] (merge {:id new-id} new-xaction)))]
-;;        (ajax/POST "/api/xactions/"
-;;                   {:params {:xaction new-xaction}
-;;                    :error-handler (fn [err] (.log js/console "error: " (utils/pp err)))
-;;                    :handler (fn [] (.log js/console "yay???"))})
-;;        reframe-res))))
-
-;; (reg-event-fx
-;;  :navigate
-;;  (fn [cofx [_ path]]
-;;    (accountant/navigate! path)
-;;    {}))
-
 (rf/reg-event-db
  :login
  (fn [db [_ user]]
@@ -77,12 +60,62 @@
 
 (rf/reg-event-fx
  :fetch-user
- (fn [_evt [_ a]]
+ (fn [_evt [_ _a]]
    (.log js/console "fetching user")
    (ajax/GET "/api/user"
-             {#_#_:params {:username @username :password @password}
-              :error-handler #(.log js/console "error" (utils/pp %))
+             {:error-handler #(.log js/console "error" (utils/pp %))
               :handler #(do
                           ;; (.log js/console "res:" (utils/pp %))
                           (rf/dispatch [:login %]))})
    {}))
+
+(rf/reg-event-db
+ :add-transaction
+ (fn [db [_ {:keys [uuid] :as xaction}]]
+   (malli/validate cledgers-spec/Transaction xaction)
+   (assoc-in db [:xactions uuid] xaction)))
+
+(rf/reg-event-db
+ :remove-transaction
+ (fn [db [_ xaction-uuid]]
+   (update-in db [:xactions] dissoc xaction-uuid)))
+
+(rf/reg-event-db
+ :transaction-fully-added
+ (fn [db [_ xaction-uuid]]
+   (update-in db [:xactions xaction-uuid] dissoc :add-waiting?)))
+
+(rf/reg-event-fx
+ :fetch-transactions
+ (fn [_evt [_ _a]]
+   (ajax/GET "/api/xactions/"
+             {:error-handler #(.log js/console "error" (utils/pp %))
+              :handler #(rf/dispatch [:set-transactions %])})
+   {}))
+
+(defn backend-xaction->frontend-xaction [{be-date :date :as back-xaction}]
+  (let [date (time-coerce/to-date-time be-date)]
+   {:uuid (:xaction_uuid back-xaction)
+    :date {:month (time/month date)
+           :day (time/day date)
+           :year (time/year date)}
+    :description (:description back-xaction)
+    :amount (:amount back-xaction)
+    :payee {:name (:payee_name back-xaction)
+            :id (:payee_id back-xaction)}
+    :ledger {:name (:ledger_name back-xaction)
+             :id (:ledger_id back-xaction)}}))
+
+(rf/reg-event-db
+ :set-transactions
+ (fn [db [_ transactions-res]]
+   #_(.log js/console "set-transactions" (utils/pp transactions-res))
+   (let [#_#_$ (transit/read (transit/reader :json) transactions-res)
+         $ (->> (:result transactions-res)
+                (map backend-xaction->frontend-xaction)
+                (map (fn [xaction]
+                       [(:uuid xaction) xaction]))
+                (into {}))]
+     (malli/validate [:map-of :string cledgers-spec/Transaction]
+                   $)
+     (assoc db :xactions $))))

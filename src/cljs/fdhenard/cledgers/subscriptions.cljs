@@ -52,3 +52,8 @@
 ;;  :db
 ;;  (fn [db _]
 ;;    db))
+
+(reg-sub
+ :transactions
+ (fn [db _]
+   (:xactions db)))
