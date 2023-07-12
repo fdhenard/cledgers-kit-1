@@ -254,9 +254,11 @@
 (defonce match (r/atom nil))
 
 (defn page []
-  (let [user @(rf/subscribe [:user])]
+  (let [user @(rf/subscribe [:user])
+        is-fetching-user? @(rf/subscribe [:is-fetching-user?])]
     ;; (.log js/console "user: " (utils/pp user))
-    (if-not user
+    (if (and (not user)
+             (not is-fetching-user?))
       [login-page/login-page]
       [:section.section.is-large
        [navbar]

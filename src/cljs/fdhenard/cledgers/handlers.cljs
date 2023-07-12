@@ -50,8 +50,11 @@
 (rf/reg-event-db
  :login
  (fn [db [_ user]]
-   (.log js/console "login event")
-   (assoc db :user user)))
+   #_(.log js/console "login event")
+   (when user
+     (-> db
+         (assoc :user user)
+         (assoc :is-fetching-user? false)))))
 
 (rf/reg-event-db
  :logout
@@ -60,14 +63,14 @@
 
 (rf/reg-event-fx
  :fetch-user
- (fn [_evt [_ _a]]
+ (fn [{:keys [db]} [_ _a]]
    (.log js/console "fetching user")
    (ajax/GET "/api/user"
              {:error-handler #(.log js/console "error" (utils/pp %))
               :handler #(do
                           ;; (.log js/console "res:" (utils/pp %))
                           (rf/dispatch [:login %]))})
-   {}))
+   {:db (assoc db :is-fetching-user? true)}))
 
 (rf/reg-event-db
  :add-transaction

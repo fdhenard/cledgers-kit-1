@@ -8,4 +8,5 @@
    :xactions {}
    ;; :user (js->clj js/user :keywordize-keys true)
    :user nil
+   #_#_:is-fetching-user? true
    })

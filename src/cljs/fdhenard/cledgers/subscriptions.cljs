@@ -1,5 +1,6 @@
 (ns fdhenard.cledgers.subscriptions
-  (:require [re-frame.core :as rf #_#_:refer [reg-sub]]
+  (:require [cljs.pprint :as pp]
+            [re-frame.core :as rf #_#_:refer [reg-sub]]
             [decimal.core :as decimal]))
 
 (rf/reg-sub
@@ -49,6 +50,11 @@
  (fn [db _]
    (get db :user)))
 
+(rf/reg-sub
+ :is-fetching-user?
+ (fn [db _]
+   (true? (:is-fetching-user? db))))
+
 ;; (rf/reg-sub
 ;;  :db
 ;;  (fn [db _]
@@ -64,9 +70,11 @@
  (fn [_query-v]
    (rf/subscribe [:transactions]))
  (fn [transactions _query-v]
-   (let [total-dec (->> transactions
-                        (map (fn [[_ xaction]]
-                               (:amount xaction)))
-                        (map decimal/decimal)
-                        (reduce decimal/+))]
-     (str total-dec))))
+   #_(pp/pprint {:transactions transactions})
+   (when transactions
+     (let [total-dec (->> transactions
+                          (map (fn [[_ xaction]]
+                                 (:amount xaction)))
+                          (map decimal/decimal)
+                          (reduce decimal/+))]
+       (str total-dec)))))
