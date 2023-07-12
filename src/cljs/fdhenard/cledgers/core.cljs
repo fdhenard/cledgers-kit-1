@@ -206,7 +206,7 @@
     [:nav.level
      [:div.level-left]
      [:div.level-right
-      [:p.level-item "sum"]]]
+      [:p.level-item (str "$" @(rf/subscribe [:total]))]]]
     [:table.table
      [:thead
       [:tr

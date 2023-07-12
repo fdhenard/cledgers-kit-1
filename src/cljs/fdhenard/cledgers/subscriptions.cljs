@@ -1,59 +1,72 @@
 (ns fdhenard.cledgers.subscriptions
-  (:require [re-frame.core :refer [reg-sub]]))
+  (:require [re-frame.core :as rf #_#_:refer [reg-sub]]
+            [decimal.core :as decimal]))
 
-(reg-sub
+(rf/reg-sub
   :page
   (fn [db _]
     (:page db)))
 
-(reg-sub
+(rf/reg-sub
   :docs
   (fn [db _]
     (:docs db)))
 
 
-(reg-sub
+(rf/reg-sub
  :time
  (fn [db _]
    (-> db :time)))
 
-(reg-sub
+(rf/reg-sub
  :time-color
  (fn [db _]
    (:time-color db)))
 
-(reg-sub
+(rf/reg-sub
  :xaction-editing-description
  (fn [db _]
    (get-in db [:xaction-editing :description])))
 
-(reg-sub
+(rf/reg-sub
  :xaction-editing-amount
  (fn [db _]
    (get-in db [:xaction-editing :amount])))
 
-(reg-sub
+(rf/reg-sub
  :xaction-editing-date
  (fn [db _]
    (get-in db [:xaction-editing :date])))
 
-(reg-sub
+(rf/reg-sub
  :xactions
  (fn [db _]
    ;; (.log js/console (str "db = " (pp db)))
    (get db :xactions)))
 
-(reg-sub
+(rf/reg-sub
  :user
  (fn [db _]
    (get db :user)))
 
-;; (reg-sub
+;; (rf/reg-sub
 ;;  :db
 ;;  (fn [db _]
 ;;    db))
 
-(reg-sub
+(rf/reg-sub
  :transactions
  (fn [db _]
    (:xactions db)))
+
+(rf/reg-sub
+ :total
+ (fn [_query-v]
+   (rf/subscribe [:transactions]))
+ (fn [transactions _query-v]
+   (let [total-dec (->> transactions
+                        (map (fn [[_ xaction]]
+                               (:amount xaction)))
+                        (map decimal/decimal)
+                        (reduce decimal/+))]
+     (str total-dec))))

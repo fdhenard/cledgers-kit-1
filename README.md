@@ -76,8 +76,17 @@ To reload changes:
 #### Clojurescript
 
 ```sh
+cd ~/dev/repos/cledgers-kit-1
 npx shadow-cljs watch app
 ```
+
+##### In emacs
+
+- `M-x cider-connect`
+- host: `localhost`
+- port: see shadow-cljs output. eg. `shadow-cljs - nREPL server started on port 7002`
+- `shadow.user> (shadow/repl :app)`
+- test repl?: `(js/alert "Hi")`
 
 ### Command Line
 
