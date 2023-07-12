@@ -199,10 +199,14 @@
 
 (defn home-page []
   [:div.container
-   [:div.row>div.col-sm-12
+   [:div.container
     [:div "Hello world, it is now"]
     [clock]]
-   [:div.row>div.col-sm-12
+   [:div.container
+    [:nav.level
+     [:div.level-left]
+     [:div.level-right
+      [:p.level-item "sum"]]]
     [:table.table
      [:thead
       [:tr
@@ -215,18 +219,18 @@
      [:tbody
       [new-xaction-row]
       (let [xactions @(rf/subscribe [:transactions])]
-       (for [[_ xaction] xactions]
-         (let [#_ (.log js/console "xaction: " (utils/pp xaction))
-               class (when (:add-waiting? xaction)
-                       "rowhighlight")]
-           [:tr {:key (:uuid xaction)
-                 :class class}
-            [:td (let [date (:date xaction)]
-                   (str (:month date) "/" (:day date) "/" (:year date)))]
-            [:td (get-in xaction [:payee :name])]
-            [:td (get-in xaction [:ledger :name])]
-            [:td (:description xaction)]
-            [:td (:amount xaction)]])))]]]])
+        (for [[_ xaction] xactions]
+          (let [#_ (.log js/console "xaction: " (utils/pp xaction))
+                class (when (:add-waiting? xaction)
+                        "rowhighlight")]
+            [:tr {:key (:uuid xaction)
+                  :class class}
+             [:td (let [date (:date xaction)]
+                    (str (:month date) "/" (:day date) "/" (:year date)))]
+             [:td (get-in xaction [:payee :name])]
+             [:td (get-in xaction [:ledger :name])]
+             [:td (:description xaction)]
+             [:td (:amount xaction)]])))]]]])
 
 
 
@@ -254,7 +258,7 @@
     ;; (.log js/console "user: " (utils/pp user))
     (if-not user
       [login-page/login-page]
-      [:div
+      [:section.section.is-large
        [navbar]
        (when @match
          [(get-in @match [:data :view])])
