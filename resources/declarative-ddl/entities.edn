@@ -69,4 +69,19 @@
             :references :cledgers-user}
            {:name "ledger"
             :type :foreign-key
-            :references :ledger}]}]
+            :references :ledger}
+           {:name "is-reconciled"
+            :type :boolean
+            :null false
+            :default false}]}
+ {:name "properties"
+  :fields [{:name "name"
+            :type :character
+            :max-length 100
+            :unique true}
+           ;; 7/13/23 - intending to add a new column for each potential
+           ;; type of value
+           {:name "decimal-value"
+            :type :numeric
+            :total-length 18
+            :decimal-places 2}]}]

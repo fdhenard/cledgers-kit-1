@@ -206,6 +206,12 @@
     [:nav.level
      [:div.level-left]
      [:div.level-right
+      [:p.level-item
+       [:button.button.is-primary.is-light
+        {:on-click
+         (fn [_evt]
+           (rf/dispatch [:reconcile]))}
+        "reconcile"]]
       [:p.level-item (str "$" @(rf/subscribe [:total]))]]]
     [:table.table
      [:thead
@@ -255,7 +261,9 @@
 
 (defn page []
   (let [user @(rf/subscribe [:user])
-        is-fetching-user? @(rf/subscribe [:is-fetching-user?])]
+        is-fetching-user? @(rf/subscribe [:is-fetching-user?])
+        #_ (pp/pprint {:user user
+                      :is-fetching-user? is-fetching-user?})]
     ;; (.log js/console "user: " (utils/pp user))
     (if (and (not user)
              (not is-fetching-user?))
@@ -267,7 +275,8 @@
        [:div.container "dater"
         [:ul
          [:li "page: " (get-in @match [:data :name])]
-         [:li "user: " user]]]])))
+         [:li "user: " user]
+         [:li "fetching user: " (str is-fetching-user?)]]]])))
 
 ;; -------------------------
 ;; Routes

@@ -1,0 +1,23 @@
+{:dal-version "3.0.2",
+ :differences
+ [{:type :diff-as-list.core/KeyMissingDiff,
+   :path [:properties],
+   :value
+   {:name "properties",
+    :fields
+    {:name
+     {:name "name", :type :character, :max-length 100, :unique true},
+     :decimal-value
+     {:name "decimal-value",
+      :type :numeric,
+      :total-length 18,
+      :decimal-places 2}}},
+   :missing-in :one}
+  {:type :diff-as-list.core/KeyMissingDiff,
+   :path [:xaction :fields :is-reconciled],
+   :value
+   {:name "is-reconciled",
+    :type :boolean,
+    :null false,
+    :default false},
+   :missing-in :one}]}
