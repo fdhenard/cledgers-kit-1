@@ -47,14 +47,14 @@
  (fn [db [_ new-time]]
    (assoc db :time new-time)))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :login
- (fn [db [_ user]]
+ (fn [{:keys [db]} [_ user]]
    #_(.log js/console "login event")
-   (when user
-     (-> db
-         (assoc :user user)
-         (assoc :is-fetching-user? false)))))
+   {:db
+    (cond-> (assoc db :is-fetching-user? false)
+      user (assoc :user user))
+    :fx [[:dispatch [:fetch-transactions]]]}))
 
 (rf/reg-event-db
  :logout-frontend
