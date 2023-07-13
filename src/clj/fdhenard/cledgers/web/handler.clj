@@ -28,7 +28,8 @@
        :not-acceptable
        (constantly (-> {:status 406, :body "Not acceptable"}
                        (http-response/content-type "text/html")))}))
-    {:middleware [(middleware/wrap-base opts)]}))
+    {:middleware [(middleware/wrap-base opts)
+                  #_middleware/wrap-user-auth]}))
 
 (defmethod ig/init-key :router/routes
   [_ {:keys [routes]}]

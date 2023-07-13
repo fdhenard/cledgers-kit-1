@@ -100,6 +100,10 @@
                              {:status 200
                               :session (assoc session :identity user-res)
                               :body user-res}))))}}]
+   ["/logout/"
+    {:post {:handler (fn [{:keys [session] :as _request}]
+                       {:status 200
+                        :session (assoc session :identity nil)})}}]
    ["/user"
     {:get {:handler (fn [request]
                       (let [user (get-in request [:session :identity])]

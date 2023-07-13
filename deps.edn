@@ -41,6 +41,7 @@
 
            io.akeyless/akeyless-java {:mvn/version "3.3.9"}
            metosin/malli {:mvn/version "0.11.0"}
+           buddy/buddy-auth {:mvn/version "3.0.323"}
            }
  :mvn/repos {"akeyless" {:url "https://akeyless.jfrog.io/artifactory/akeyless-java"
                          :snapshots {:enabled false}}}

@@ -25,24 +25,40 @@
 ;; Views
 
 (defn navbar []
-  [:nav.navbar {:role "navigation" :aria-label "main navigation"}
-   [:div.navbar-brand
-    [:div.navbar-item "fdhenard.cledgers"]
-    [:a {:role "button" :class "navbar-burger burger" :aria-label "menu" :aria-expanded "false" :data-target "navbar-thing"}
-     [:span {:aria-hidden true}]
-     [:span {:aria-hidden true}]
-     [:span {:aria-hidden true}]]]
-   [:div.navbar-menu {:id "navbar-thing"}
-
-    [:div.navbar-start
-     [:div {:class "navbar-item has-dropdown is-hoverable"}
-      [:a.navbar-link "User"]
-      [:div.navbar-dropdown
-       [:div.navbar-item
-        {:on-click #(ajax/POST "/api/logout/"
-                               :error-handler (fn [] (.log js/console "error: " (utils/pp %)))
-                               :handler (fn [] (rf/dispatch [:logout nil])))}
-        "Logout"]]]]]])
+  (let [burger-expanded (r/atom false)]
+   (fn []
+     [:nav.navbar {:role "navigation" :aria-label "maim navigation"}
+      [:div.navbar-brand
+       [:div.navbar-item "fdhenard.cledgers"]
+       [:div.navbar-burger
+        {:role "button"
+         :aria-label "menu"
+         :aria-expanded false
+         :data-target "cledgers-navbar-menu"
+         :class (if-not @burger-expanded
+                  #{}
+                  #{"is-active"})
+         :on-click (fn [_evt]
+                     (swap! burger-expanded #(not %)))}
+        [:span {:aria-hidden true}]
+        [:span {:aria-hidden true}]
+        [:span {:aria-hidden true}]]]
+      [:div.navbar-menu
+       {:id "cledgers-navbar-menu"
+        :class (if-not @burger-expanded
+                 #{}
+                 #{"is-active"})}
+       [:div.navbar-start]
+       [:div.navbar-end
+        [:div.navbar-item.has-dropdown.is-hoverable
+         [:a.navbar-link "User"]
+         [:div.navbar-dropdown
+          [:a.navbar-item
+           {:href "#"
+            :on-click
+            (fn [_evt]
+              (rf/dispatch [:logout]))}
+           "logout"]]]]]])))
 
 
 (defn about-page []

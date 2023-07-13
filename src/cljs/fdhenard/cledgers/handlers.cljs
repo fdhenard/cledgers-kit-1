@@ -57,12 +57,18 @@
          (assoc :is-fetching-user? false)))))
 
 (rf/reg-event-db
- :logout
+ :logout-frontend
  (fn [db _]
    #_(.log js/console "logging out ")
    (-> db
        (dissoc :user)
        (assoc :is-fetching-user? false))))
+
+(rf/reg-event-fx
+ :logout
+ (fn [{:keys [db] :as evt} [_ _a]]
+   (ajax/POST "/api/logout/")
+   {:fx [[:dispatch [:logout-frontend]]]}))
 
 (rf/reg-event-fx
  :fetch-user
@@ -73,10 +79,11 @@
               (fn [response]
                 (when-not (= 401 (:status response))
                   (.log js/console "error" (utils/pp response)))
-                (rf/dispatch [:logout]))
-              :handler #(do
-                          ;; (.log js/console "res:" (utils/pp %))
-                          (rf/dispatch [:login %]))})
+                (rf/dispatch [:logout-frontend]))
+              :handler
+              #(do
+                 ;; (.log js/console "res:" (utils/pp %))
+                 (rf/dispatch [:login %]))})
    {:db (assoc db :is-fetching-user? true)}))
 
 (rf/reg-event-db
