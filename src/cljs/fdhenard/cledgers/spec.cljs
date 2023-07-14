@@ -14,8 +14,8 @@
    [:payee
     [:map
      [:name string?]
-     [:id string?]]]
+     [:id int?]]]
    [:ledger
     [:map
      [:name string?]
-     [:id string?]]]])
+     [:id int?]]]])

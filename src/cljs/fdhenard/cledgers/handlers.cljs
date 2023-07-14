@@ -1,5 +1,6 @@
 (ns fdhenard.cledgers.handlers
-  (:require [fdhenard.cledgers.db :as db]
+  (:require [cljs.pprint :as pp]
+            [fdhenard.cledgers.db :as db]
             [re-frame.core :as rf]
             [cljs-uuid-utils.core :as uuid]
             [fdhenard.cledgers.utils :as utils]
@@ -89,7 +90,10 @@
 (rf/reg-event-db
  :add-transaction
  (fn [db [_ {:keys [uuid] :as xaction}]]
-   (malli/validate cledgers-spec/Transaction xaction)
+   (when-not (malli/validate cledgers-spec/Transaction xaction)
+     (let [explanation (malli/explain cledgers-spec/Transaction xaction)]
+       (pp/pprint {:transactions-invalid explanation})
+       (throw (ex-info "transaction data invalid" {:explain explanation}))))
    (assoc-in db [:xactions uuid] xaction)))
 
 (rf/reg-event-db
@@ -127,12 +131,19 @@
  :set-transactions
  (fn [db [_ transactions-res]]
    #_(.log js/console "set-transactions" (utils/pp transactions-res))
-   (let [#_#_$ (transit/read (transit/reader :json) transactions-res)
-         $ (->> (:result transactions-res)
+   (let [xactions (->> (:result transactions-res)
                 (map backend-xaction->frontend-xaction)
                 (map (fn [xaction]
                        [(:uuid xaction) xaction]))
                 (into {}))]
-     (malli/validate [:map-of :string cledgers-spec/Transaction]
-                   $)
-     (assoc db :xactions $))))
+     (when-not (malli/validate
+                [:map-of :string cledgers-spec/Transaction] xactions)
+       (let [explanation (malli/explain
+                          [:map-of :string cledgers-spec/Transaction]
+                          xactions)]
+        (pp/pprint {:transactions-invalid explanation})
+        (throw
+         (ex-info
+          "transactions not valid"
+          {:explain explanation}))))
+     (assoc db :xactions xactions))))
