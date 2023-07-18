@@ -148,21 +148,43 @@
           {:explain explanation}))))
      (assoc db :xactions xactions))))
 
+(rf/reg-event-db
+ :mark-reconciled
+ (fn [db [_ xaction-uuids]]
+   (let [new-xactions
+         (reduce
+          (fn [xactions-map xaction-uuid]
+            (let [xaction (get xactions-map xaction-uuid)]
+              (when (:is-reconciled? xaction)
+                (throw (ex-info "shouldn't be reconciled" {:xaction xaction})))
+              (let [new-xaction (assoc xaction :is-reconciled? true)]
+                (assoc xactions-map xaction-uuid new-xaction))))
+          (:xactions db)
+          xaction-uuids)]
+     (assoc db :xactions new-xactions))))
+
 
 (rf/reg-event-fx
  :reconcile
  (rf/inject-cofx ::inject/sub [:total])
  (fn [{:keys [db total] :as _cofx} [_ _a]]
-   (ajax/POST "/api/reconcile"
-              {:error-handler
-               (fn [err-data]
-                 (.log js/console "error" (utils/pp err-data))
-                 #_(rf/dispatch [:done-reconciling]))
-               #_#_:handler #(rf/dispatch [:done-reconciling])
-               :finally #(rf/dispatch [:done-reconciling])
-               :params {:amount total}
-               #_#_:format :transit
-               #_#_:headers {"Accept" "application/transit+json"}})
+   (let [unreconciled-xaction-uuids
+         (->> (:xactions db)
+              (filter
+               (fn [[_ xaction]]
+                 (not (:is-reconciled? xaction))))
+              (map first)
+              set)]
+     (ajax/POST "/api/reconcile"
+                {:error-handler
+                 (fn [err-data]
+                   (.log js/console "error" (utils/pp err-data)))
+                 :handler #(rf/dispatch [:mark-reconciled
+                                         unreconciled-xaction-uuids])
+                 :finally #(rf/dispatch [:done-reconciling])
+                 :params {:amount total
+                          :unreconciled-xaction-uuids
+                          unreconciled-xaction-uuids}}))
    {:db (assoc db :is-reconciling? true)}))
 
 (rf/reg-event-db

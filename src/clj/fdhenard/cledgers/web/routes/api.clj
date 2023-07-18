@@ -142,10 +142,10 @@
     {:post
      {:handler
       (fn [req]
-        (let [#_ (println "here")
-              {:keys [query-fn connection]} _opts
-              amt-in (-> (get-in req [:body-params :amount])
-                         bigdec)
+        (let [{:keys [query-fn connection]} _opts
+              {:keys [unreconciled-xaction-uuids
+                      amount]} (:body-params req)
+              amt-in (bigdec amount)
               backend-total (-> (query-fn :sum-xactions-for-reconcile {})
                                 :total)]
           (if-not (= amt-in backend-total)
