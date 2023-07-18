@@ -60,15 +60,15 @@
 ;;  (fn [db _]
 ;;    db))
 
-(rf/reg-sub
- :transactions
- (fn [db _]
-   (:xactions db)))
+;; (rf/reg-sub
+;;  :transactions
+;;  (fn [db _]
+;;    (:xactions db)))
 
 (rf/reg-sub
  :total
  (fn [_query-v]
-   (rf/subscribe [:transactions]))
+   (rf/subscribe [:xactions]))
  (fn [transactions _query-v]
    #_(pp/pprint {:transactions transactions})
    (when transactions

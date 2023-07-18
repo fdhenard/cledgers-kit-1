@@ -216,7 +216,7 @@
 
 
 (defn home-page []
-  (let [xactions (rf/subscribe [:transactions])
+  (let [xactions (rf/subscribe [:xactions])
         is-reconciling? (rf/subscribe [:is-reconciling?])
         total (rf/subscribe [:total])]
    (fn []
