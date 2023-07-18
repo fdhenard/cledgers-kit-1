@@ -126,15 +126,18 @@
                          :body {:result (query-fn :get-ledgers {:q (str q-parm "%")})}}))}}]
    ["/xactions/"
     {:post {:handler (handle-post-xactions _opts)}
-     :get {:handler
-           (fn [_request]
-             (let [{:keys [query-fn]} _opts
-                   xactions (->> (query-fn :get-transactions {})
-                                 (map (fn [xaction]
-                                        #_(pp/pprint {:xaction xaction})
-                                        (assoc xaction :amount (str (:amount xaction))))))]
-               {:status 200
-                :body {:result xactions}}))}}]
+     :get
+     {:handler
+      (fn [_request]
+        (let [{:keys [query-fn]} _opts
+              xactions
+              (->> (query-fn :get-transactions {})
+                   (map
+                    (fn [xaction]
+                      #_(pp/pprint {:xaction xaction})
+                      (assoc xaction :amount (str (:amount xaction))))))]
+          {:status 200
+           :body {:result xactions}}))}}]
    ["/reconcile"
     {:post
      {:handler
@@ -156,10 +159,11 @@
 (comment
 
   (require '[integrant.repl.state :as state])
-  (let [#_#_{:keys [query-fn]} state/system
-        {query-fn :db.sql/query-fn} state/system]
-    (-> (query-fn :sum-xactions-for-reconcile {})
-        :total))
+  (def query-fn (:db.sql/query-fn state/system))
+  (-> (query-fn :sum-xactions-for-reconcile {})
+      :total)
+
+  (query-fn :get-transactions {})
 
   (= "1.23" 1.23M)
   (= (bigdec "1.24") 1.23M)

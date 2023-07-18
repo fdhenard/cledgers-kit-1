@@ -124,7 +124,8 @@
     :payee {:name (:payee_name back-xaction)
             :id (:payee_id back-xaction)}
     :ledger {:name (:ledger_name back-xaction)
-             :id (:ledger_id back-xaction)}}))
+             :id (:ledger_id back-xaction)}
+    :is-reconciled? (:is_reconciled back-xaction)}))
 
 (rf/reg-event-db
  :set-transactions

@@ -18,4 +18,5 @@
    [:ledger
     [:map
      [:name string?]
-     [:id int?]]]])
+     [:id int?]]]
+   [:is-reconciled? boolean?]])

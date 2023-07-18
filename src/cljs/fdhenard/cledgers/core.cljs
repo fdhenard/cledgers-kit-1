@@ -97,7 +97,8 @@
                                :year (time/year @last-date-used)}
                         :description ""
                         :amount ""
-                        :add-waiting? true})
+                        :add-waiting? true
+                        :is-reconciled? false})
 
 (defn xform-xaction-for-backend [xaction]
   (as-> xaction $
@@ -185,6 +186,7 @@
        [:td [:input {:type "text"
                      :value (:amount @new-xaction)
                      :on-change #(swap! new-xaction assoc :amount (-> % .-target .-value))}]]
+       [:td "false"]
        [:td [:button
              {:on-click
               (fn [_evt]
@@ -242,6 +244,7 @@
          [:th "ledger"]
          [:th "desc"]
          [:th "amount"]
+         [:th "clear"]
          [:th "controls"]]]
        [:tbody
         [new-xaction-row]
@@ -256,7 +259,8 @@
              [:td (get-in xaction [:payee :name])]
              [:td (get-in xaction [:ledger :name])]
              [:td (:description xaction)]
-             [:td (:amount xaction)]]))]]]])))
+             [:td (:amount xaction)]
+             [:td (str (:is-reconciled? xaction))]]))]]]])))
 
 
 
