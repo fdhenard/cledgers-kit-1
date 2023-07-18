@@ -59,3 +59,29 @@ select x.id as xaction_id, x.uuid as xaction_uuid, x.description,
   from xaction x
   join payee p on p.id = x.payee_id
   join ledger l on l.id = x.ledger_id
+
+-- :name sum-xactions-for-reconcile :? :1
+select
+  coalesce(
+    (select decimal_value from properties
+      where name = 'reconcile-amt')
+    , 0)
+  +
+  coalesce(
+    (select sum(amount) from xaction
+      where is_reconciled = false)
+    , 0)
+  as total;
+
+
+-- :name set-reconcile-amt! :! :n
+insert into properties
+  (name, decimal_value) values
+  ('reconcile-amt', :reconcile-amt)
+on conflict on constraint properties_name_key
+  do update set decimal_value = EXCLUDED.decimal_value;
+
+-- :name set-xactions-reconciled! :! :n
+update xaction
+  set is_reconciled = true
+where is_reconciled = false;

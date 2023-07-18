@@ -78,3 +78,8 @@
                           (map decimal/decimal)
                           (reduce decimal/+))]
        (str total-dec)))))
+
+(rf/reg-sub
+ :is-reconciling?
+ (fn [db _]
+   (true? (:is-reconciling? db))))

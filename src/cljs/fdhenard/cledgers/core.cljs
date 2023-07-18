@@ -214,34 +214,38 @@
 
 
 (defn home-page []
-  [:div.container
-   [:div.container
-    [:div "Hello world, it is now"]
-    [clock]]
-   [:div.container
-    [:nav.level
-     [:div.level-left]
-     [:div.level-right
-      [:p.level-item
-       [:button.button.is-primary.is-light
-        {:on-click
-         (fn [_evt]
-           (rf/dispatch [:reconcile]))}
-        "reconcile"]]
-      [:p.level-item (str "$" @(rf/subscribe [:total]))]]]
-    [:table.table
-     [:thead
-      [:tr
-       [:th "date"]
-       [:th "payee"]
-       [:th "ledger"]
-       [:th "desc"]
-       [:th "amount"]
-       [:th "controls"]]]
-     [:tbody
-      [new-xaction-row]
-      (let [xactions @(rf/subscribe [:transactions])]
-        (for [[_ xaction] xactions]
+  (let [xactions (rf/subscribe [:transactions])
+        is-reconciling? (rf/subscribe [:is-reconciling?])
+        total (rf/subscribe [:total])]
+   (fn []
+    [:div.container
+     [:div.container
+      [:div "Hello world, it is now"]
+      [clock]]
+     [:div.container
+      [:nav.level
+       [:div.level-left]
+       [:div.level-right
+        [:p.level-item
+         [:button.button.is-primary.is-light
+          {:on-click
+           (fn [_evt]
+             (rf/dispatch [:reconcile]))
+           :disabled @is-reconciling?}
+          "reconcile"]]
+        [:p.level-item (str "$" @total)]]]
+      [:table.table
+       [:thead
+        [:tr
+         [:th "date"]
+         [:th "payee"]
+         [:th "ledger"]
+         [:th "desc"]
+         [:th "amount"]
+         [:th "controls"]]]
+       [:tbody
+        [new-xaction-row]
+        (for [[_ xaction] @xactions]
           (let [#_ (.log js/console "xaction: " (utils/pp xaction))
                 class (when (:add-waiting? xaction)
                         "rowhighlight")]
@@ -252,7 +256,7 @@
              [:td (get-in xaction [:payee :name])]
              [:td (get-in xaction [:ledger :name])]
              [:td (:description xaction)]
-             [:td (:amount xaction)]])))]]]])
+             [:td (:amount xaction)]]))]]]])))
 
 
 

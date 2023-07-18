@@ -42,9 +42,11 @@
            io.akeyless/akeyless-java {:mvn/version "3.3.9"}
            metosin/malli {:mvn/version "0.11.0"}
            buddy/buddy-auth {:mvn/version "3.0.323"}
+           re-frame-utils/re-frame-utils {:mvn/version "0.1.0"}
            }
- :mvn/repos {"akeyless" {:url "https://akeyless.jfrog.io/artifactory/akeyless-java"
-                         :snapshots {:enabled false}}}
+ :mvn/repos {"akeyless"
+             {:url "https://akeyless.jfrog.io/artifactory/akeyless-java"
+              :snapshots {:enabled false}}}
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/sha "e3e3532"
                                                          :git/tag "v0.8.0"
                                                          :git/url "https://github.com/clojure/tools.build.git"}

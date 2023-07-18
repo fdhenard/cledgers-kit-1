@@ -134,7 +134,38 @@
                                         #_(pp/pprint {:xaction xaction})
                                         (assoc xaction :amount (str (:amount xaction))))))]
                {:status 200
-                :body {:result xactions}}))}}]])
+                :body {:result xactions}}))}}]
+   ["/reconcile"
+    {:post
+     {:handler
+      (fn [req]
+        (let [#_ (println "here")
+              {:keys [query-fn connection]} _opts
+              amt-in (-> (get-in req [:body-params :amount])
+                         bigdec)
+              backend-total (-> (query-fn :sum-xactions-for-reconcile {})
+                                :total)]
+          (if-not (= amt-in backend-total)
+            (throw (ex-info "totals should match" {:amt-in amt-in
+                                                   :backend-total backend-total}))
+            (jdbc/with-transaction [tx-conn connection]
+              (query-fn tx-conn :set-reconcile-amt! {:reconcile-amt amt-in})
+              (query-fn tx-conn :set-xactions-reconciled! {})
+              {:status 200}))))}}]])
+
+(comment
+
+  (require '[integrant.repl.state :as state])
+  (let [#_#_{:keys [query-fn]} state/system
+        {query-fn :db.sql/query-fn} state/system]
+    (-> (query-fn :sum-xactions-for-reconcile {})
+        :total))
+
+  (= "1.23" 1.23M)
+  (= (bigdec "1.24") 1.23M)
+
+
+  )
 
 (derive :reitit.routes/api :reitit/routes)
 
