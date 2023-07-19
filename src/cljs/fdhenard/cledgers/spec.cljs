@@ -3,12 +3,6 @@
 (def Transaction
   [:map
    [:uuid string?]
-   ;; [:date
-   ;;  [:map
-   ;;   [:month int?]
-   ;;   [:day int?]
-   ;;   [:year int?]]]
-   ;; [:date string?]
    [:date any?]
    [:description string?]
    [:amount string?]

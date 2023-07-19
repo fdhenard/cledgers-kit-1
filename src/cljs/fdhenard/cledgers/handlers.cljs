@@ -115,9 +115,6 @@
 
 (defn backend-xaction->frontend-xaction [{be-date :date :as back-xaction}]
   {:uuid (:xaction_uuid back-xaction)
-   ;; :date {:month (time/month date)
-   ;;        :day (time/day date)
-   ;;        :year (time/year date)}
    :date (time-coerce/to-local-date be-date)
    :description (:description back-xaction)
    :amount (:amount back-xaction)

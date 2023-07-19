@@ -243,40 +243,38 @@
                      :value (:amount @new-xaction)
                      :on-change #(swap! new-xaction assoc :amount (-> % .-target .-value))}]]
        [:td "false"]
-       [:td [:button
-             {:on-click
-              (fn [_evt]
-                (let [xaction-to-add (-> @new-xaction
-                                         xform-xaction-for-backend)
-                      _ (pp/pprint {:xaction-to-add xaction-to-add})]
-                  ;; (reset! last-date-used (time/local-date
-                  ;;                         (js/parseInt (get-in @new-xaction [:date :year]))
-                  ;;                         (js/parseInt (get-in @new-xaction [:date :month]))
-                  ;;                         (js/parseInt (get-in @new-xaction [:date :day]))))
-                  (reset! last-date-used (:date @new-xaction))
-                  (rf/dispatch [:add-transaction xaction-to-add])
-                  (reset! new-xaction (empty-xaction))
-                  (ajax/POST "/api/xactions/"
-                             {:params
-                              {:xaction
-                               (assoc
-                                xaction-to-add
-                                :date
-                                (time-fmt/unparse-local-date
-                                 {:format-str "yyyy-MM-dd"}
-                                 (:date xaction-to-add)))}
-                              :error-handler
-                              (fn [err]
-                                (.log js/console "error: " (utils/pp err))
-                                (rf/dispatch [:remove-transaction (:uuid xaction-to-add)]))
-                              :handler
-                              (fn [_response]
-                                (rf/dispatch [:transaction-fully-added (:uuid xaction-to-add)])
-                                (.log js/console "success adding xaction")
-                                (reset! payee-ta-atom (typeahead/new-typeahead-vals))
-                                (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))})))
-              }
-             "Add"]]])))
+       [:td
+        [:button
+         {:on-click
+          (fn [_evt]
+            (let [xaction-to-add (-> @new-xaction
+                                     xform-xaction-for-backend)
+                  _ (pp/pprint {:xaction-to-add xaction-to-add})]
+              (reset! last-date-used (:date @new-xaction))
+              (rf/dispatch [:add-transaction xaction-to-add])
+              (reset! new-xaction (empty-xaction))
+              (ajax/POST
+               "/api/xactions/"
+               {:params
+                {:xaction
+                 (assoc
+                  xaction-to-add
+                  :date
+                  (time-fmt/unparse-local-date
+                   {:format-str "yyyy-MM-dd"}
+                   (:date xaction-to-add)))}
+                :error-handler
+                (fn [err]
+                  (.log js/console "error: " (utils/pp err))
+                  (rf/dispatch [:remove-transaction (:uuid xaction-to-add)]))
+                :handler
+                (fn [_response]
+                  (rf/dispatch [:transaction-fully-added (:uuid xaction-to-add)])
+                  (.log js/console "success adding xaction")
+                  (reset! payee-ta-atom (typeahead/new-typeahead-vals))
+                  (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))})))
+          }
+         "Add"]]])))
 
 
 (defn home-page []
@@ -318,8 +316,6 @@
                         "rowhighlight")]
             [:tr {:key (:uuid xaction)
                   :class class}
-             ;; [:td (let [date (:date xaction)]
-             ;;        (str (:month date) "/" (:day date) "/" (:year date)))]
              [:td (time-fmt/unparse-local-date
                    {:format-str "MM/dd/yyyy"}
                    (:date xaction))]
