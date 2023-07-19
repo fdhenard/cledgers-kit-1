@@ -151,10 +151,20 @@
                :error-handler (fn [err]
                                 (.log js/console "error: " (utils/pp err)))})))
 
-(defn editable-xaction-row []
-  (let [xaction-for-edit (r/atom (empty-xaction))
-        payee-ta-atom (r/atom (typeahead/new-typeahead-vals))
-        ledger-ta-atom (r/atom (typeahead/new-typeahead-vals))]
+(defn editable-xaction-row [xaction-in]
+  (let [xaction-for-edit (r/atom xaction-in)
+        payee-ta-atom (r/atom
+                       {:textbox-val
+                        (get-in xaction-in [:payee :name])
+                        :matches #{}
+                        :selection-val
+                        (get-in xaction-in [:payee :name])})
+        ledger-ta-atom (r/atom
+                        {:textbox-val
+                         (get-in xaction-in [:ledger :name])
+                         :matches #{}
+                         :selection-val
+                         (get-in xaction-in [:ledger :name])})]
     (fn []
       [:tr {:key (:uuid @xaction-for-edit)}
        [:td
@@ -271,7 +281,9 @@
      (let [#_ (.log js/console "xaction: " (utils/pp xaction))
            class (when (:add-waiting? xaction)
                    "rowhighlight")
-           is-editing? (= @editing-id (:uuid xaction))]
+           disable-edit-button?
+           (and @editing-id
+                (not= @editing-id (:uuid xaction)))]
        [:tr {:class class}
         [:td (time-fmt/unparse-local-date
               {:format-str "MM/dd/yyyy"}
@@ -285,7 +297,8 @@
          [:button.button.is-link
           {:on-click
            (fn [_evt]
-             (rf/dispatch [:edit (:uuid xaction)]))}
+             (rf/dispatch [:edit (:uuid xaction)]))
+           :disabled disable-edit-button?}
           "Edit"]]]))))
 
 
@@ -293,7 +306,7 @@
   (let [xactions (rf/subscribe [:xactions-sorted-by-date-desc])
         is-reconciling? (rf/subscribe [:is-reconciling?])
         total (rf/subscribe [:total])
-        ]
+        editing-id (rf/subscribe [:editing-id])]
     (fn []
       [:div.container
        [:div.container
@@ -322,10 +335,13 @@
            [:th "clear"]
            [:th "controls"]]]
          [:tbody
-          [editable-xaction-row]
-          (for [xaction @xactions]
-            ^{:key (:uuid xaction)}
-            [view-xaction-row xaction])]]]])))
+          [editable-xaction-row (empty-xaction)]
+          (doall
+           (for [xaction @xactions]
+             (let [is-editing? (= @editing-id (:uuid xaction))]
+               (if is-editing?
+                 ^{:key (:uuid xaction)} [editable-xaction-row xaction]
+                 ^{:key (:uuid xaction)} [view-xaction-row xaction]))))]]]])))
 
 
 
