@@ -59,11 +59,12 @@
              (let [ledger (assoc ledger :created-by-id user-id)
                    create-res (query-fn tx-conn :create-ledger! ledger)]
                (:id create-res)))
-           yr (get-in xaction [:date :year])
-           mo (get-in xaction [:date :month])
-           da (get-in xaction [:date :day])
-           _ (pp/pprint {:yr yr :mo mo :da da})
-           new-date (time/local-date yr mo da)
+           ;; yr (get-in xaction [:date :year])
+           ;; mo (get-in xaction [:date :month])
+           ;; da (get-in xaction [:date :day])
+           ;; _ (pp/pprint {:yr yr :mo mo :da da})
+           ;; new-date (time/local-date yr mo da)
+           new-date (time/local-date "yyyy-MM-dd" (:date xaction))
            updated-xaction (-> xaction
                                (dissoc :payee)
                                (dissoc :ledger)

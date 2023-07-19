@@ -114,18 +114,18 @@
    {}))
 
 (defn backend-xaction->frontend-xaction [{be-date :date :as back-xaction}]
-  (let [date (time-coerce/to-date-time be-date)]
-   {:uuid (:xaction_uuid back-xaction)
-    :date {:month (time/month date)
-           :day (time/day date)
-           :year (time/year date)}
-    :description (:description back-xaction)
-    :amount (:amount back-xaction)
-    :payee {:name (:payee_name back-xaction)
-            :id (:payee_id back-xaction)}
-    :ledger {:name (:ledger_name back-xaction)
-             :id (:ledger_id back-xaction)}
-    :is-reconciled? (:is_reconciled back-xaction)}))
+  {:uuid (:xaction_uuid back-xaction)
+   ;; :date {:month (time/month date)
+   ;;        :day (time/day date)
+   ;;        :year (time/year date)}
+   :date (time-coerce/to-local-date be-date)
+   :description (:description back-xaction)
+   :amount (:amount back-xaction)
+   :payee {:name (:payee_name back-xaction)
+           :id (:payee_id back-xaction)}
+   :ledger {:name (:ledger_name back-xaction)
+            :id (:ledger_id back-xaction)}
+   :is-reconciled? (:is_reconciled back-xaction)})
 
 (rf/reg-event-db
  :set-transactions

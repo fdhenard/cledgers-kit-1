@@ -83,3 +83,10 @@
  :is-reconciling?
  (fn [db _]
    (true? (:is-reconciling? db))))
+
+;; (rf/reg-sub
+;;  :xactions-sorted-by
+;;  (fn [{:keys [xactions] :as db} something]
+;;    (let [$ (->> xactions
+;;                 (map (fn [[_ xaction]] xaction))
+;;                 (sort-by ))])))

@@ -14,6 +14,7 @@
             [ajax.core :as ajax]
             [cljs-uuid-utils.core :as uuid]
             [cljs-time.core :as time]
+            [cljs-time.format :as time-fmt]
             [fdhenard.cledgers.bulma-typeahead :as typeahead]
             [reitit.frontend.easy :as rfe]
             [reitit.frontend.controllers :as rfc]
@@ -91,18 +92,42 @@
 
 (def last-date-used (atom (time/today)))
 
+(comment
+
+  @last-date-used
+  (str @last-date-used)
+  (type @last-date-used)
+
+  #_(require '[cljs-time.format :as time-fmt])
+  (def local-dt-fmt (time-fmt/formatter "yyyy-MM-dd"))
+  local-dt-fmt
+
+  (time-fmt/unparse-local-date {:formatters [local-dt-fmt]} @last-date-used)
+
+  (time-fmt/unparse-local-date {:format-str "yyyy-MM-dd"} @last-date-used)
+
+
+  )
+
 (defn empty-xaction [] {:uuid (str (uuid/make-random-uuid))
-                        :date {:month (time/month @last-date-used)
+                        #_#_:date {:month (time/month @last-date-used)
                                :day (time/day @last-date-used)
                                :year (time/year @last-date-used)}
+                        ;; :date (time-fmt/unparse-local-date
+                        ;;        {:format-str "yyyy-MM-dd"}
+                        ;;        @last-date-used)
+                        :date @last-date-used
                         :description ""
                         :amount ""
                         :add-waiting? true
                         :is-reconciled? false})
 
 (defn xform-xaction-for-backend [xaction]
-  (as-> xaction $
-    (dissoc $ :add-waiting?)))
+  (-> xaction
+    (dissoc :add-waiting?)
+    #_(assoc :date (time-fmt/unparse-local-date
+                  {:format-str "yyyy-MM-dd"}
+                  (:date xaction)))))
 
 (defn get-payees! [q-str callback]
   #_(println "callback:" callback)
@@ -140,18 +165,49 @@
        [:td
         [:input {:type "text"
                  :size 2
-                 :value (get-in @new-xaction [:date :month])
-                 :on-change #(swap! new-xaction assoc-in [:date :month] (-> % .-target .-value))}]
+                 ;; :value (get-in @new-xaction [:date :month])
+                 :value (time/month (:date @new-xaction))
+                 ;; :on-change #(swap! new-xaction assoc-in [:date :month] (-> % .-target .-value))
+                 :on-change
+                 (fn [evt]
+                   (let [new-month-val (-> evt .-target .-value)
+                         new-date
+                         (time/local-date
+                          (time/year (:date @new-xaction))
+                          new-month-val
+                          (time/day (:date @new-xaction)))]
+                     (swap! new-xaction assoc :date new-date)))}]
         [:span "/"]
         [:input {:type "text"
                  :size 2
-                 :value (get-in @new-xaction [:date :day])
-                 :on-change #(swap! new-xaction assoc-in [:date :day] (-> % .-target .-value))}]
+                 ;; :value (get-in @new-xaction [:date :day])
+                 :value (time/day (:date @new-xaction))
+                 ;; :on-change #(swap! new-xaction assoc-in [:date :day] (-> % .-target .-value))
+                 :on-change
+                 (fn [evt]
+                   (let [new-day-val (-> evt .-target .-value)
+                         new-date
+                         (time/local-date
+                          (time/year (:date @new-xaction))
+                          (time/month (:date @new-xaction))
+                          new-day-val)]
+                     (swap! new-xaction assoc :date new-date)))
+                 }]
         [:span "/"]
         [:input {:type "text"
                  :size 4
-                 :value (get-in @new-xaction [:date :year])
-                 :on-change #(swap! new-xaction assoc-in [:date :year] (-> % .-target .-value))}]]
+                 ;; :value (get-in @new-xaction [:date :year])
+                 :value (time/year (:date @new-xaction))
+                 ;; :on-change #(swap! new-xaction assoc-in [:date :year] (-> % .-target .-value))
+                 :on-change
+                 (fn [evt]
+                   (let [new-year-val (-> evt .-target .-value)
+                         new-date
+                         (time/local-date
+                          new-year-val
+                          (time/month (:date @new-xaction))
+                          new-year-val)]
+                     (swap! new-xaction assoc :date new-date)))}]]
        [:td [typeahead/typeahead-component
              {:ta-atom payee-ta-atom
               :query-func get-payees!
@@ -193,14 +249,22 @@
                 (let [xaction-to-add (-> @new-xaction
                                          xform-xaction-for-backend)
                       _ (pp/pprint {:xaction-to-add xaction-to-add})]
-                  (reset! last-date-used (time/local-date
-                                          (js/parseInt (get-in @new-xaction [:date :year]))
-                                          (js/parseInt (get-in @new-xaction [:date :month]))
-                                          (js/parseInt (get-in @new-xaction [:date :day]))))
+                  ;; (reset! last-date-used (time/local-date
+                  ;;                         (js/parseInt (get-in @new-xaction [:date :year]))
+                  ;;                         (js/parseInt (get-in @new-xaction [:date :month]))
+                  ;;                         (js/parseInt (get-in @new-xaction [:date :day]))))
+                  (reset! last-date-used (:date @new-xaction))
                   (rf/dispatch [:add-transaction xaction-to-add])
                   (reset! new-xaction (empty-xaction))
                   (ajax/POST "/api/xactions/"
-                             {:params {:xaction xaction-to-add}
+                             {:params
+                              {:xaction
+                               (assoc
+                                xaction-to-add
+                                :date
+                                (time-fmt/unparse-local-date
+                                 {:format-str "yyyy-MM-dd"}
+                                 (:date xaction-to-add)))}
                               :error-handler
                               (fn [err]
                                 (.log js/console "error: " (utils/pp err))
@@ -254,8 +318,11 @@
                         "rowhighlight")]
             [:tr {:key (:uuid xaction)
                   :class class}
-             [:td (let [date (:date xaction)]
-                    (str (:month date) "/" (:day date) "/" (:year date)))]
+             ;; [:td (let [date (:date xaction)]
+             ;;        (str (:month date) "/" (:day date) "/" (:year date)))]
+             [:td (time-fmt/unparse-local-date
+                   {:format-str "MM/dd/yyyy"}
+                   (:date xaction))]
              [:td (get-in xaction [:payee :name])]
              [:td (get-in xaction [:ledger :name])]
              [:td (:description xaction)]
@@ -284,23 +351,24 @@
 (defonce match (r/atom nil))
 
 (defn page []
-  (let [user @(rf/subscribe [:user])
-        is-fetching-user? @(rf/subscribe [:is-fetching-user?])
+  (let [user (rf/subscribe [:user])
+        is-fetching-user? (rf/subscribe [:is-fetching-user?])
         #_ (pp/pprint {:user user
                       :is-fetching-user? is-fetching-user?})]
     ;; (.log js/console "user: " (utils/pp user))
-    (if (and (not user)
-             (not is-fetching-user?))
-      [login-page/login-page]
-      [:section.section.is-large
-       [navbar]
-       (when @match
-         [(get-in @match [:data :view])])
-       [:div.container "dater"
-        [:ul
-         [:li "page: " (get-in @match [:data :name])]
-         [:li "user: " user]
-         [:li "fetching user: " (str is-fetching-user?)]]]])))
+    (fn []
+     (if (and (not @user)
+              (not @is-fetching-user?))
+       [login-page/login-page]
+       [:section.section.is-large
+        [navbar]
+        (when @match
+          [(get-in @match [:data :view])])
+        [:div.container "dater"
+         [:ul
+          [:li "page: " (get-in @match [:data :name])]
+          [:li "user: " @user]
+          [:li "fetching user: " (str @is-fetching-user?)]]]]))))
 
 ;; -------------------------
 ;; Routes
@@ -389,3 +457,13 @@
                        (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match)))))))
    {:use-fragment true})
   (mount-root))
+
+
+(comment
+
+  (str (time/local-date 2023 7 18))
+
+  (require '[cljs-time.coerce :as time-coerce])
+  (time-coerce/to-local-date "2023-07-18")
+
+  )
