@@ -89,4 +89,4 @@
  (fn [{:keys [xactions] :as _db} _something]
    (->> xactions
         (map (fn [[_ xaction]] xaction))
-        (sort-by :date >))))
+        (sort-by (juxt :date :time-created) >))))

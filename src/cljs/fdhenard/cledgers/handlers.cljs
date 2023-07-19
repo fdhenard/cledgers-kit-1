@@ -88,12 +88,13 @@
 
 (rf/reg-event-db
  :add-transaction
- (fn [db [_ {:keys [uuid] :as xaction}]]
-   (when-not (malli/validate cledgers-spec/Transaction xaction)
-     (let [explanation (malli/explain cledgers-spec/Transaction xaction)]
-       (pp/pprint {:transactions-invalid explanation})
-       (throw (ex-info "transaction data invalid" {:explain explanation}))))
-   (assoc-in db [:xactions uuid] xaction)))
+ (fn [db [_ {:keys [uuid] :as xaction_}]]
+   (let [xaction$ (assoc xaction_ :time-created (time/now))]
+    (when-not (malli/validate cledgers-spec/Transaction xaction$)
+      (let [explanation (malli/explain cledgers-spec/Transaction xaction$)]
+        (pp/pprint {:transactions-invalid explanation})
+        (throw (ex-info "transaction data invalid" {:explain explanation}))))
+    (assoc-in db [:xactions uuid] xaction$))))
 
 (rf/reg-event-db
  :remove-transaction
@@ -122,7 +123,8 @@
            :id (:payee_id back-xaction)}
    :ledger {:name (:ledger_name back-xaction)
             :id (:ledger_id back-xaction)}
-   :is-reconciled? (:is_reconciled back-xaction)})
+   :is-reconciled? (:is_reconciled back-xaction)
+   :time-created (:time_created back-xaction)})
 
 (rf/reg-event-db
  :set-transactions

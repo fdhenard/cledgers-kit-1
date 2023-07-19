@@ -3,7 +3,8 @@
 (def Transaction
   [:map
    [:uuid string?]
-   [:date any?]
+   [:date some?]
+   [:time-created some?]
    [:description string?]
    [:amount string?]
    [:add-waiting? {:optional true} boolean?]
