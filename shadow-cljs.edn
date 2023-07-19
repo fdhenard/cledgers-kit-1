@@ -15,6 +15,7 @@
                 [cider/cider-nrepl "0.31.0"]
                 [funcool/decimal "1.0.2"]
                 [re-frame-utils/re-frame-utils "0.1.0"]
+                [re-frisk-remote/re-frisk-remote "1.6.0"]
                 ]
  :nrepl {:port 7002
          :middleware [cider.nrepl/cider-middleware]}

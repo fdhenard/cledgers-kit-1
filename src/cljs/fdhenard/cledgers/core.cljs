@@ -19,7 +19,8 @@
             [reitit.frontend.easy :as rfe]
             [reitit.frontend.controllers :as rfc]
             [reitit.frontend]
-            [reitit.coercion.schema :as rsc])
+            [reitit.coercion.schema :as rsc]
+            [re-frisk-remote.core :as re-frisk-remote])
   #_(:import goog.History))
 
 ;; -------------------------
@@ -98,13 +99,18 @@
   (str @last-date-used)
   (type @last-date-used)
 
-  #_(require '[cljs-time.format :as time-fmt])
   (def local-dt-fmt (time-fmt/formatter "yyyy-MM-dd"))
   local-dt-fmt
 
   (time-fmt/unparse-local-date {:formatters [local-dt-fmt]} @last-date-used)
 
   (time-fmt/unparse-local-date {:format-str "yyyy-MM-dd"} @last-date-used)
+
+  (def today (time/today))
+  (def yesterday (time/local-date 2023 7 18))
+
+  (> today yesterday)
+  (< today yesterday)
 
 
   )
@@ -278,7 +284,7 @@
 
 
 (defn home-page []
-  (let [xactions (rf/subscribe [:xactions])
+  (let [xactions (rf/subscribe [:xactions-sorted-by-date-desc])
         is-reconciling? (rf/subscribe [:is-reconciling?])
         total (rf/subscribe [:total])]
    (fn []
@@ -310,7 +316,7 @@
          [:th "controls"]]]
        [:tbody
         [new-xaction-row]
-        (for [[_ xaction] @xactions]
+        (for [xaction @xactions #_#_[_ xaction] @xactions]
           (let [#_ (.log js/console "xaction: " (utils/pp xaction))
                 class (when (:add-waiting? xaction)
                         "rowhighlight")]
@@ -440,6 +446,7 @@
 (defn ^:dev/after-load mount-root []
   (rf/dispatch [:fetch-user])
   (rf/dispatch [:fetch-transactions])
+  (re-frisk-remote/enable)
   (d/render [#'page] (.getElementById js/document "app")))
 
 (defn ^:export ^:dev/once init! []
