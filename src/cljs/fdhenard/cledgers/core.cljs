@@ -241,7 +241,8 @@
        [:td [:input {:type "text"
                      :value (:amount @xaction-for-edit)
                      :on-change #(swap! xaction-for-edit assoc :amount (-> % .-target .-value))}]]
-       [:td (str (:is-reconciled? @xaction-for-edit))]
+       [:td [:input {:type "checkbox"
+                     :disabled (not (:is-reconciled @xaction-for-edit))}]]
        [:td
         [:button.button.is-link
          {:on-click
@@ -282,8 +283,9 @@
            class (when (:add-waiting? xaction)
                    "rowhighlight")
            disable-edit-button?
-           (and @editing-id
-                (not= @editing-id (:uuid xaction)))]
+           (or (:is-reconciled? xaction)
+               (and @editing-id
+                    (not= @editing-id (:uuid xaction))))]
        [:tr {:class class}
         [:td (time-fmt/unparse-local-date
               {:format-str "MM/dd/yyyy"}
@@ -292,7 +294,22 @@
         [:td (get-in xaction [:ledger :name])]
         [:td (:description xaction)]
         [:td (:amount xaction)]
-        [:td (str (:is-reconciled? xaction))]
+        [:td
+         [:input
+          {:type "checkbox"
+           :defaultChecked (:is-reconciled? xaction)
+           :disabled (not (:is-reconciled? xaction))
+           :onClick
+           (fn [_evt]
+             (let [is-checked? (-> _evt .-target .-checked)]
+               (.log js/console (str "checked: " is-checked?))
+               (if-not (= (not is-checked?) (:is-reconciled? xaction))
+                 (throw
+                  (ex-info
+                   "should only be able to uncheck a reconciled xaction"
+                   {:is-checked? is-checked?
+                    :is-reconciled? (:is-reconciled? xaction)}))
+                 (rf/dispatch [:unreconcile (:uuid xaction)]))))}]]
         [:td
          [:button.button.is-link
           {:on-click
