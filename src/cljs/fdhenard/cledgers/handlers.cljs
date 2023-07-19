@@ -190,3 +190,8 @@
  :done-reconciling
  (fn [db [_ _]]
    (assoc db :is-reconciling? false)))
+
+(rf/reg-event-db
+ :edit
+ (fn [db [_ edit-id]]
+   (assoc db :editing-id edit-id)))

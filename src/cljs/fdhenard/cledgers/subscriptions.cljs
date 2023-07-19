@@ -90,3 +90,8 @@
    (->> xactions
         (map (fn [[_ xaction]] xaction))
         (sort-by (juxt :date :time-created) >))))
+
+(rf/reg-sub
+ :editing-id
+ (fn [db _something]
+   (:editing-id db)))

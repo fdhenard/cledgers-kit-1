@@ -116,12 +116,6 @@
   )
 
 (defn empty-xaction [] {:uuid (str (uuid/make-random-uuid))
-                        #_#_:date {:month (time/month @last-date-used)
-                               :day (time/day @last-date-used)
-                               :year (time/year @last-date-used)}
-                        ;; :date (time-fmt/unparse-local-date
-                        ;;        {:format-str "yyyy-MM-dd"}
-                        ;;        @last-date-used)
                         :date @last-date-used
                         :description ""
                         :amount ""
@@ -130,18 +124,13 @@
 
 (defn xform-xaction-for-backend [xaction]
   (-> xaction
-    (dissoc :add-waiting?)
-    #_(assoc :date (time-fmt/unparse-local-date
-                  {:format-str "yyyy-MM-dd"}
-                  (:date xaction)))))
+    (dissoc :add-waiting?)))
 
 (defn get-payees! [q-str callback]
   #_(println "callback:" callback)
   (let [response->results
         (fn [response]
-          (let [payees (-> response :result)
-                #_ (println "something:")
-                #_ (pp/pprint something)]
+          (let [payees (-> response :result)]
             (callback payees)))]
 
    (ajax/GET "/api/payees"
@@ -162,58 +151,52 @@
                :error-handler (fn [err]
                                 (.log js/console "error: " (utils/pp err)))})))
 
-(defn new-xaction-row []
-  (let [new-xaction (r/atom (empty-xaction))
+(defn editable-xaction-row []
+  (let [xaction-for-edit (r/atom (empty-xaction))
         payee-ta-atom (r/atom (typeahead/new-typeahead-vals))
         ledger-ta-atom (r/atom (typeahead/new-typeahead-vals))]
     (fn []
-      [:tr {:key "new-one"}
+      [:tr {:key (:uuid @xaction-for-edit)}
        [:td
         [:input {:type "text"
                  :size 2
-                 ;; :value (get-in @new-xaction [:date :month])
-                 :value (time/month (:date @new-xaction))
-                 ;; :on-change #(swap! new-xaction assoc-in [:date :month] (-> % .-target .-value))
+                 :value (time/month (:date @xaction-for-edit))
                  :on-change
                  (fn [evt]
                    (let [new-month-val (-> evt .-target .-value)
                          new-date
                          (time/local-date
-                          (time/year (:date @new-xaction))
+                          (time/year (:date @xaction-for-edit))
                           new-month-val
-                          (time/day (:date @new-xaction)))]
-                     (swap! new-xaction assoc :date new-date)))}]
+                          (time/day (:date @xaction-for-edit)))]
+                     (swap! xaction-for-edit assoc :date new-date)))}]
         [:span "/"]
         [:input {:type "text"
                  :size 2
-                 ;; :value (get-in @new-xaction [:date :day])
-                 :value (time/day (:date @new-xaction))
-                 ;; :on-change #(swap! new-xaction assoc-in [:date :day] (-> % .-target .-value))
+                 :value (time/day (:date @xaction-for-edit))
                  :on-change
                  (fn [evt]
                    (let [new-day-val (-> evt .-target .-value)
                          new-date
                          (time/local-date
-                          (time/year (:date @new-xaction))
-                          (time/month (:date @new-xaction))
+                          (time/year (:date @xaction-for-edit))
+                          (time/month (:date @xaction-for-edit))
                           new-day-val)]
-                     (swap! new-xaction assoc :date new-date)))
+                     (swap! xaction-for-edit assoc :date new-date)))
                  }]
         [:span "/"]
         [:input {:type "text"
                  :size 4
-                 ;; :value (get-in @new-xaction [:date :year])
-                 :value (time/year (:date @new-xaction))
-                 ;; :on-change #(swap! new-xaction assoc-in [:date :year] (-> % .-target .-value))
+                 :value (time/year (:date @xaction-for-edit))
                  :on-change
                  (fn [evt]
                    (let [new-year-val (-> evt .-target .-value)
                          new-date
                          (time/local-date
                           new-year-val
-                          (time/month (:date @new-xaction))
+                          (time/month (:date @xaction-for-edit))
                           new-year-val)]
-                     (swap! new-xaction assoc :date new-date)))}]]
+                     (swap! xaction-for-edit assoc :date new-date)))}]]
        [:td [typeahead/typeahead-component
              {:ta-atom payee-ta-atom
               :query-func get-payees!
@@ -222,7 +205,7 @@
                                  payee {:name payee-name
                                         :is-new (:is-new selection)
                                         :id (:id selection)}]
-                             (swap! new-xaction assoc :payee payee)
+                             (swap! xaction-for-edit assoc :payee payee)
                              (reset! payee-ta-atom (merge
                                                     @payee-ta-atom
                                                     {:textbox-val payee-name}))))
@@ -236,29 +219,29 @@
                                  ledger {:name ledger-name
                                          :is-new (:is-new selection)
                                          :id (:id selection)}]
-                             (swap! new-xaction assoc :ledger ledger)
+                             (swap! xaction-for-edit assoc :ledger ledger)
                              (reset! ledger-ta-atom (merge
                                                     @ledger-ta-atom
                                                     {:textbox-val ledger-name}))))
               :item->text (fn [item]
                             (:name item))}]]
        [:td [:input {:type "text"
-                     :value (:description @new-xaction)
-                     :on-change #(swap! new-xaction assoc :description (-> % .-target .-value))}]]
+                     :value (:description @xaction-for-edit)
+                     :on-change #(swap! xaction-for-edit assoc :description (-> % .-target .-value))}]]
        [:td [:input {:type "text"
-                     :value (:amount @new-xaction)
-                     :on-change #(swap! new-xaction assoc :amount (-> % .-target .-value))}]]
-       [:td "false"]
+                     :value (:amount @xaction-for-edit)
+                     :on-change #(swap! xaction-for-edit assoc :amount (-> % .-target .-value))}]]
+       [:td (str (:is-reconciled? @xaction-for-edit))]
        [:td
-        [:button
+        [:button.button.is-link
          {:on-click
           (fn [_evt]
-            (let [xaction-to-add (-> @new-xaction
+            (let [xaction-to-add (-> @xaction-for-edit
                                      xform-xaction-for-backend)
                   _ (pp/pprint {:xaction-to-add xaction-to-add})]
-              (reset! last-date-used (:date @new-xaction))
+              (reset! last-date-used (:date @xaction-for-edit))
               (rf/dispatch [:add-transaction xaction-to-add])
-              (reset! new-xaction (empty-xaction))
+              (reset! xaction-for-edit (empty-xaction))
               (ajax/POST
                "/api/xactions/"
                {:params
@@ -282,54 +265,67 @@
           }
          "Add"]]])))
 
+(defn view-xaction-row [xaction]
+  (let [editing-id (rf/subscribe [:editing-id])]
+    (fn []
+     (let [#_ (.log js/console "xaction: " (utils/pp xaction))
+           class (when (:add-waiting? xaction)
+                   "rowhighlight")
+           is-editing? (= @editing-id (:uuid xaction))]
+       [:tr {:class class}
+        [:td (time-fmt/unparse-local-date
+              {:format-str "MM/dd/yyyy"}
+              (:date xaction))]
+        [:td (get-in xaction [:payee :name])]
+        [:td (get-in xaction [:ledger :name])]
+        [:td (:description xaction)]
+        [:td (:amount xaction)]
+        [:td (str (:is-reconciled? xaction))]
+        [:td
+         [:button.button.is-link
+          {:on-click
+           (fn [_evt]
+             (rf/dispatch [:edit (:uuid xaction)]))}
+          "Edit"]]]))))
+
 
 (defn home-page []
   (let [xactions (rf/subscribe [:xactions-sorted-by-date-desc])
         is-reconciling? (rf/subscribe [:is-reconciling?])
-        total (rf/subscribe [:total])]
-   (fn []
-    [:div.container
-     [:div.container
-      [:div "Hello world, it is now"]
-      [clock]]
-     [:div.container
-      [:nav.level
-       [:div.level-left]
-       [:div.level-right
-        [:p.level-item
-         [:button.button.is-primary.is-light
-          {:on-click
-           (fn [_evt]
-             (rf/dispatch [:reconcile]))
-           :disabled @is-reconciling?}
-          "reconcile"]]
-        [:p.level-item (str "$" @total)]]]
-      [:table.table
-       [:thead
-        [:tr
-         [:th "date"]
-         [:th "payee"]
-         [:th "ledger"]
-         [:th "desc"]
-         [:th "amount"]
-         [:th "clear"]
-         [:th "controls"]]]
-       [:tbody
-        [new-xaction-row]
-        (for [xaction @xactions #_#_[_ xaction] @xactions]
-          (let [#_ (.log js/console "xaction: " (utils/pp xaction))
-                class (when (:add-waiting? xaction)
-                        "rowhighlight")]
-            [:tr {:key (:uuid xaction)
-                  :class class}
-             [:td (time-fmt/unparse-local-date
-                   {:format-str "MM/dd/yyyy"}
-                   (:date xaction))]
-             [:td (get-in xaction [:payee :name])]
-             [:td (get-in xaction [:ledger :name])]
-             [:td (:description xaction)]
-             [:td (:amount xaction)]
-             [:td (str (:is-reconciled? xaction))]]))]]]])))
+        total (rf/subscribe [:total])
+        ]
+    (fn []
+      [:div.container
+       [:div.container
+        [:div "Hello world, it is now"]
+        [clock]]
+       [:div.container
+        [:nav.level
+         [:div.level-left]
+         [:div.level-right
+          [:p.level-item
+           [:button.button.is-primary.is-light
+            {:on-click
+             (fn [_evt]
+               (rf/dispatch [:reconcile]))
+             :disabled @is-reconciling?}
+            "reconcile"]]
+          [:p.level-item (str "$" @total)]]]
+        [:table.table
+         [:thead
+          [:tr
+           [:th "date"]
+           [:th "payee"]
+           [:th "ledger"]
+           [:th "desc"]
+           [:th "amount"]
+           [:th "clear"]
+           [:th "controls"]]]
+         [:tbody
+          [editable-xaction-row]
+          (for [xaction @xactions]
+            ^{:key (:uuid xaction)}
+            [view-xaction-row xaction])]]]])))
 
 
 
