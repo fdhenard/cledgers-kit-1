@@ -61,6 +61,16 @@ select x.id as xaction_id, x.uuid as xaction_uuid, x.description,
   join payee p on p.id = x.payee_id
   join ledger l on l.id = x.ledger_id
 
+-- :name get-xaction-by-uuid :? :1
+select x.id as xaction_id, x.uuid as xaction_uuid, x.description,
+       x.amount, x.date,  p.id as payee_id, p.name as payee_name,
+       l.id as ledger_id, l.name as ledger_name, x.is_reconciled,
+       x.time_created
+  from xaction x
+  join payee p on p.id = x.payee_id
+  join ledger l on l.id = x.ledger_id
+ where x.uuid = :uuid
+
 -- :name sum-xactions-for-reconcile :? :1
 select
   coalesce(
@@ -86,3 +96,18 @@ on conflict on constraint properties_name_key
 update xaction
   set is_reconciled = true
 where is_reconciled = false;
+
+-- :name set-xaction-unreconciled! :! :n
+update xaction
+  set is_reconciled = false
+ where uuid = :xaction-uuid
+
+-- :name add-to-reconcile-amt! :! :n
+update properties
+  set decimal_value = (
+    (select decimal_value from properties
+      where name = 'reconcile-amt')
+    +
+    :amount
+  )
+ where name = 'reconcile-amt'

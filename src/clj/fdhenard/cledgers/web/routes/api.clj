@@ -150,6 +150,30 @@
             (jdbc/with-transaction [tx-conn connection]
               (query-fn tx-conn :set-reconcile-amt! {:reconcile-amt amt-in})
               (query-fn tx-conn :set-xactions-reconciled! {})
+              {:status 200}))))}}]
+   ["/unreconcile"
+    {:put
+     {:handler
+      (fn [req]
+        (let [{:keys [query-fn connection]} _opts
+              {amt-in-str :xaction-amt
+               :keys [xaction-uuid]} (:body-params req)
+              amt-in (bigdec amt-in-str)
+              xaction (query-fn :get-xaction-by-uuid {:uuid xaction-uuid})]
+          (if-not (= amt-in (:amount xaction))
+            (throw (ex-info "amounts should be equal"
+                            {:amt-in amt-in
+                             :xaction-amt (:amount xaction)
+                             :xaction-uuid xaction-uuid}))
+            (jdbc/with-transaction [tx-conn connection]
+              (query-fn
+               tx-conn
+               :set-xaction-unreconciled!
+               {:xaction-uuid xaction-uuid})
+              (query-fn
+               tx-conn
+               :add-to-reconcile-amt!
+               {:amount (* -1 amt-in)})
               {:status 200}))))}}]])
 
 (comment

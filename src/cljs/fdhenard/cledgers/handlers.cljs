@@ -195,3 +195,28 @@
  :edit
  (fn [db [_ edit-id]]
    (assoc db :editing-id edit-id)))
+
+(rf/reg-event-fx
+ :unreconcile
+ (fn [{:keys [db] :as _cofx} [_ xaction-uuid]]
+   (let [xaction (get-in db [:xactions xaction-uuid])]
+     (ajax/PUT "/api/unreconcile"
+               {:params {:xaction-uuid xaction-uuid
+                         :xaction-amt (:amount xaction)}
+                :handler
+                #(rf/dispatch [:mark-unreconciled
+                               xaction-uuid])
+                :error-handler
+                (fn [err-data]
+                  (.log js/console "error" (utils/pp err-data))
+                  (rf/dispatch [:mark-reconciled
+                                [xaction-uuid]]))})
+     {})))
+
+(rf/reg-event-db
+ :mark-unreconciled
+ (fn [db [_ xaction-uuid]]
+   (update-in
+    db
+    [:xactions xaction-uuid]
+    #(assoc % :is-reconciled false))))
