@@ -30,4 +30,7 @@ on conflict on constraint properties_name_key
   do update set decimal_value = EXCLUDED.decimal_value;
 
 select * from properties;
+delete from properties;
+
+select * from xaction;
 

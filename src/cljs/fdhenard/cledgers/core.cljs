@@ -276,9 +276,9 @@
           }
          "Add"]]])))
 
-(defn view-xaction-row [xaction]
+(defn view-xaction-row []
   (let [editing-id (rf/subscribe [:editing-id])]
-    (fn []
+    (fn [xaction]
      (let [#_ (.log js/console "xaction: " (utils/pp xaction))
            class (when (:add-waiting? xaction)
                    "rowhighlight")
@@ -297,7 +297,7 @@
         [:td
          [:input
           {:type "checkbox"
-           :defaultChecked (:is-reconciled? xaction)
+           :checked (:is-reconciled? xaction)
            :disabled (not (:is-reconciled? xaction))
            :onClick
            (fn [_evt]

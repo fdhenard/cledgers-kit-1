@@ -71,7 +71,7 @@
    (rf/subscribe [:xactions]))
  (fn [transactions _query-v]
    #_(pp/pprint {:transactions transactions})
-   (when transactions
+   (when (seq transactions)
      (let [total-dec (->> transactions
                           (map (fn [[_ xaction]]
                                  (:amount xaction)))
@@ -86,7 +86,10 @@
 
 (rf/reg-sub
  :xactions-sorted-by-date-desc
- (fn [{:keys [xactions] :as _db} _something]
+ (fn [_query-v]
+   (rf/subscribe [:xactions]))
+ (fn [xactions _something]
+   #_(.log js/console "xactions sorted handler triggered")
    (->> xactions
         (map (fn [[_ xaction]] xaction))
         (sort-by (juxt :date :time-created) >))))

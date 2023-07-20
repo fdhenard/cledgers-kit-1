@@ -219,4 +219,4 @@
    (update-in
     db
     [:xactions xaction-uuid]
-    #(assoc % :is-reconciled false))))
+    #(assoc % :is-reconciled? false))))
