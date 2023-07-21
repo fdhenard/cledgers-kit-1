@@ -15,6 +15,8 @@
 (rf/reg-event-db
   :initialize-db
   (fn [_ _]
+    (rf/dispatch [:fetch-user])
+    (rf/dispatch [:fetch-transactions])
     db/default-db))
 
 (rf/reg-event-db
@@ -220,3 +222,8 @@
     db
     [:xactions xaction-uuid]
     #(assoc % :is-reconciled? false))))
+
+(rf/reg-event-db
+ :set-last-date-used
+ (fn [db [_ new-last-date-used]]
+   (assoc db :last-date-used new-last-date-used)))

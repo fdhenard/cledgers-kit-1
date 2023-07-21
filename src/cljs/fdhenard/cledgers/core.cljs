@@ -91,20 +91,12 @@
 
 (defonce do-timer (js/setInterval dispatch-timer-event 1000))
 
-(def last-date-used (atom (time/today)))
+;; (def last-date-used (atom (time/today)))
 
 (comment
 
-  @last-date-used
-  (str @last-date-used)
-  (type @last-date-used)
-
   (def local-dt-fmt (time-fmt/formatter "yyyy-MM-dd"))
   local-dt-fmt
-
-  (time-fmt/unparse-local-date {:formatters [local-dt-fmt]} @last-date-used)
-
-  (time-fmt/unparse-local-date {:format-str "yyyy-MM-dd"} @last-date-used)
 
   (def today (time/today))
   (def yesterday (time/local-date 2023 7 18))
@@ -115,12 +107,13 @@
 
   )
 
-(defn empty-xaction [] {:uuid (str (uuid/make-random-uuid))
-                        :date @last-date-used
-                        :description ""
-                        :amount ""
-                        :add-waiting? true
-                        :is-reconciled? false})
+(defn empty-xaction []
+  {:uuid (str (uuid/make-random-uuid))
+   :date @(rf/subscribe [:last-date-used])
+   :description ""
+   :amount ""
+   :add-waiting? true
+   :is-reconciled? false})
 
 (defn xform-xaction-for-backend [xaction]
   (-> xaction
@@ -242,7 +235,8 @@
                      :value (:amount @xaction-for-edit)
                      :on-change #(swap! xaction-for-edit assoc :amount (-> % .-target .-value))}]]
        [:td [:input {:type "checkbox"
-                     :disabled (not (:is-reconciled @xaction-for-edit))}]]
+                     :disabled
+                     (not (:is-reconciled @xaction-for-edit))}]]
        [:td
         [:button.button.is-link
          {:on-click
@@ -250,7 +244,8 @@
             (let [xaction-to-add (-> @xaction-for-edit
                                      xform-xaction-for-backend)
                   _ (pp/pprint {:xaction-to-add xaction-to-add})]
-              (reset! last-date-used (:date @xaction-for-edit))
+              (rf/dispatch [:set-last-date-used
+                            (:date @xaction-for-edit)])
               (rf/dispatch [:add-transaction xaction-to-add])
               (reset! xaction-for-edit (empty-xaction))
               (ajax/POST
@@ -266,10 +261,12 @@
                 :error-handler
                 (fn [err]
                   (.log js/console "error: " (utils/pp err))
-                  (rf/dispatch [:remove-transaction (:uuid xaction-to-add)]))
+                  (rf/dispatch [:remove-transaction
+                                (:uuid xaction-to-add)]))
                 :handler
                 (fn [_response]
-                  (rf/dispatch [:transaction-fully-added (:uuid xaction-to-add)])
+                  (rf/dispatch [:transaction-fully-added
+                                (:uuid xaction-to-add)])
                   (.log js/console "success adding xaction")
                   (reset! payee-ta-atom (typeahead/new-typeahead-vals))
                   (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))})))
@@ -299,7 +296,7 @@
           {:type "checkbox"
            :checked (:is-reconciled? xaction)
            :disabled (not (:is-reconciled? xaction))
-           :onClick
+           :on-change
            (fn [_evt]
              (let [is-checked? (-> _evt .-target .-checked)]
                (.log js/console (str "checked: " is-checked?))
@@ -473,8 +470,7 @@
 ;; Initialize app
 
 (defn ^:dev/after-load mount-root []
-  (rf/dispatch [:fetch-user])
-  (rf/dispatch [:fetch-transactions])
+  (rf/dispatch-sync [:initialize-db])
   (re-frisk-remote/enable)
   (d/render [#'page] (.getElementById js/document "app")))
 

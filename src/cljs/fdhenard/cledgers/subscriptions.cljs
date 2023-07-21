@@ -98,3 +98,8 @@
  :editing-id
  (fn [db _something]
    (:editing-id db)))
+
+(rf/reg-sub
+ :last-date-used
+ (fn [db _something]
+   (:last-date-used db)))
