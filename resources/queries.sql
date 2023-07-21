@@ -36,6 +36,15 @@ INSERT INTO xaction
 VALUES
   (:description, :amount, :date, :created-by-id, :uuid, :payee-id, :ledger-id)
 
+-- :name update-xaction! :! :n
+UPDATE xaction
+  SET description = :description
+    , amount = :amount
+    , date = :date
+    , payee_id = :payee-id
+    ,  ledger_id = :ledger-id
+ WHERE uuid = :uuid
+
 -- :name create-payee! :returning-execute :1
 -- :doc creates a new payee
 INSERT INTO payee

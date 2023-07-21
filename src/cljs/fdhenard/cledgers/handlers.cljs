@@ -126,7 +126,8 @@
    :ledger {:name (:ledger_name back-xaction)
             :id (:ledger_id back-xaction)}
    :is-reconciled? (:is_reconciled back-xaction)
-   :time-created (:time_created back-xaction)})
+   :time-created (:time_created back-xaction)
+   :backend-id (:xaction_id back-xaction)})
 
 (rf/reg-event-db
  :set-transactions
@@ -227,3 +228,9 @@
  :set-last-date-used
  (fn [db [_ new-last-date-used]]
    (assoc db :last-date-used new-last-date-used)))
+
+
+(rf/reg-event-db
+ :update-xaction
+ (fn [db [_ updated-xaction]]
+   (assoc-in db [:xactions (:uuid updated-xaction)] updated-xaction)))

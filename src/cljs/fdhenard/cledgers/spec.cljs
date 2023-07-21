@@ -16,4 +16,5 @@
     [:map
      [:name string?]
      [:id int?]]]
-   [:is-reconciled? boolean?]])
+   [:is-reconciled? boolean?]
+   [:backend-id {:optional true} int?]])

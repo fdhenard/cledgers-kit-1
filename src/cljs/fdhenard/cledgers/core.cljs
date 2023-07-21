@@ -117,7 +117,11 @@
 
 (defn xform-xaction-for-backend [xaction]
   (-> xaction
-    (dissoc :add-waiting?)))
+      (dissoc :add-waiting?)
+      (assoc :date
+             (time-fmt/unparse-local-date
+              {:format-str "yyyy-MM-dd"}
+              (:date xaction)))))
 
 (defn get-payees! [q-str callback]
   #_(println "callback:" callback)
@@ -238,40 +242,57 @@
                      :disabled
                      (not (:is-reconciled @xaction-for-edit))}]]
        [:td
-        [:button.button.is-link
-         {:on-click
-          (fn [_evt]
-            (let [xaction-to-add (-> @xaction-for-edit
-                                     xform-xaction-for-backend)
-                  _ (pp/pprint {:xaction-to-add xaction-to-add})]
-              (rf/dispatch [:set-last-date-used
-                            (:date @xaction-for-edit)])
-              (rf/dispatch [:add-transaction xaction-to-add])
-              (reset! xaction-for-edit (empty-xaction))
-              (ajax/POST
-               "/api/xactions/"
-               {:params
-                {:xaction
-                 (assoc
-                  xaction-to-add
-                  :date
-                  (time-fmt/unparse-local-date
-                   {:format-str "yyyy-MM-dd"}
-                   (:date xaction-to-add)))}
-                :error-handler
-                (fn [err]
-                  (.log js/console "error: " (utils/pp err))
-                  (rf/dispatch [:remove-transaction
-                                (:uuid xaction-to-add)]))
-                :handler
-                (fn [_response]
-                  (rf/dispatch [:transaction-fully-added
-                                (:uuid xaction-to-add)])
-                  (.log js/console "success adding xaction")
-                  (reset! payee-ta-atom (typeahead/new-typeahead-vals))
-                  (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))})))
-          }
-         "Add"]]])))
+        (if (int? (:backend-id @xaction-for-edit))
+          ;; editing
+          [:button.button.is-link
+           {:on-click
+            (fn [evt]
+              (rf/dispatch [:edit nil])
+              (let [xaction-to-save (xform-xaction-for-backend @xaction-for-edit)]
+                (ajax/PUT
+                 "/api/xactions/"
+                 {:params {:xaction xaction-to-save}
+                  :error-handler
+                  (fn [err-data]
+                    (.log js/console
+                          "error on xaction save: "
+                          (utils/pp err-data)))
+                  :handler
+                  (fn [_resp]
+                    (.log js/console "xaction updated")
+                    (rf/dispatch [:update-xaction @xaction-for-edit]))})))}
+           "Save"]
+          ;; adding
+          [:button.button.is-link
+           {:on-click
+            (fn [_evt]
+              (let [_ (pp/pprint {:xaction-to-add @xaction-for-edit})]
+                (rf/dispatch [:set-last-date-used
+                              (:date @xaction-for-edit)])
+                (rf/dispatch [:add-transaction @xaction-for-edit])
+                (reset! xaction-for-edit (empty-xaction))
+                (let [xaction-to-add (-> @xaction-for-edit
+                                         xform-xaction-for-backend)]
+                  (ajax/POST
+                   "/api/xactions/"
+                   {:params {:xaction xaction-to-add}
+                    :error-handler
+                    (fn [err]
+                      (.log js/console
+                            "error on creation of new xaction: "
+                            (utils/pp err))
+                      (rf/dispatch [:remove-transaction
+                                    (:uuid xaction-to-add)]))
+                    :handler
+                    (fn [_response]
+                      (rf/dispatch [:transaction-fully-added
+                                    (:uuid xaction-to-add)])
+                      (.log js/console "success adding xaction")
+                      (reset! payee-ta-atom (typeahead/new-typeahead-vals))
+                      (reset! ledger-ta-atom (typeahead/new-typeahead-vals)))}))))
+            }
+           "Add"])
+        ]])))
 
 (defn view-xaction-row []
   (let [editing-id (rf/subscribe [:editing-id])]
@@ -349,11 +370,12 @@
            [:th "clear"]
            [:th "controls"]]]
          [:tbody
-          [editable-xaction-row (empty-xaction)]
+          (when-not @editing-id
+            [editable-xaction-row (empty-xaction)])
           (doall
            (for [xaction @xactions]
-             (let [is-editing? (= @editing-id (:uuid xaction))]
-               (if is-editing?
+             (let [is-editing-this-xaction? (= @editing-id (:uuid xaction))]
+               (if is-editing-this-xaction?
                  ^{:key (:uuid xaction)} [editable-xaction-row xaction]
                  ^{:key (:uuid xaction)} [view-xaction-row xaction]))))]]]])))
 

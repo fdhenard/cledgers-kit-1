@@ -37,42 +37,54 @@
                   ;; exception handling
                 exception/wrap-exception]})
 
+(defn request->saveable-xaction [query-fn tx-conn request]
+  (let [user-id (get-in request [:session :identity :id])
+        xaction (get-in request [:body-params :xaction])
+        #_ (pp/pprint {:xaction xaction})
+        #_ (pp/pprint {:request request})
+        payee (:payee xaction)
+        ledger (:ledger xaction)
+        payee-id
+        (if-not (:is-new payee)
+          (:id payee)
+          (let [payee (assoc payee :created-by-id user-id)
+                create-res (query-fn tx-conn :create-payee! payee)]
+            (:id create-res)))
+        ledger-id
+        (if-not (:is-new ledger)
+          (:id ledger)
+          (let [ledger (assoc ledger :created-by-id user-id)
+                create-res (query-fn tx-conn :create-ledger! ledger)]
+            (:id create-res)))
+        new-date (time/local-date "yyyy-MM-dd" (:date xaction))
+        #_ (log/debug "new-xaction:" (pp/pprint {:updated-xaction  updated-xaction}))
+        #_ (log/debug (str "xactions post request:\n"
+                           (utils/pp {:request request})))
+        #_ (query-fn tx-conn :create-xaction! updated-xaction)]
+    (-> xaction
+        (dissoc :payee)
+        (dissoc :ledger)
+        (merge {:date new-date
+                :amount (-> xaction :amount bigdec)
+                :created-by-id user-id
+                :payee-id payee-id
+                :ledger-id ledger-id}))))
 
 (defn handle-post-xactions [{:keys [connection query-fn] :as _opts}]
   (fn [request]
-   (jdbc/with-transaction [tx-conn connection]
-     (let [user-id (get-in request [:session :identity :id])
-           xaction (get-in request [:body-params :xaction])
-           #_ (pp/pprint {:xaction xaction})
-           #_ (pp/pprint {:request request})
-           payee (:payee xaction)
-           ledger (:ledger xaction)
-           payee-id
-           (if-not (:is-new payee)
-             (:id payee)
-             (let [payee (assoc payee :created-by-id user-id)
-                   create-res (query-fn tx-conn :create-payee! payee)]
-               (:id create-res)))
-           ledger-id
-           (if-not (:is-new ledger)
-             (:id ledger)
-             (let [ledger (assoc ledger :created-by-id user-id)
-                   create-res (query-fn tx-conn :create-ledger! ledger)]
-               (:id create-res)))
-           new-date (time/local-date "yyyy-MM-dd" (:date xaction))
-           updated-xaction (-> xaction
-                               (dissoc :payee)
-                               (dissoc :ledger)
-                               (merge {:date new-date
-                                       :amount (-> xaction :amount bigdec)
-                                       :created-by-id user-id
-                                       :payee-id payee-id
-                                       :ledger-id ledger-id}))
-           _ (log/debug "new-xaction:" (pp/pprint {:updated-xaction  updated-xaction}))
-           #_ (log/debug (str "xactions post request:\n"
-                              (utils/pp {:request request})))
-           _ (query-fn tx-conn :create-xaction! updated-xaction)]
-       {:status 200}))))
+    (jdbc/with-transaction [tx-conn connection]
+      (let [xaction-to-add
+            (request->saveable-xaction query-fn tx-conn request)
+            _ (query-fn tx-conn :create-xaction! xaction-to-add)]
+        {:status 201}))))
+
+(defn handle-put-xaction [{:keys [connection query-fn] :as _opts}]
+  (fn [request]
+    (jdbc/with-transaction [tx-conn connection]
+      (let [xaction-to-save
+            (request->saveable-xaction query-fn tx-conn request)
+            _ (query-fn tx-conn :update-xaction! xaction-to-save)]
+        {:status 200}))))
 
 
 ;; Routes
@@ -122,6 +134,7 @@
                          :body {:result (query-fn :get-ledgers {:q (str q-parm "%")})}}))}}]
    ["/xactions/"
     {:post {:handler (handle-post-xactions _opts)}
+     :put {:handler (handle-put-xaction _opts)}
      :get
      {:handler
       (fn [_request]
