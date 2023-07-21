@@ -20,7 +20,9 @@
             [reitit.frontend.controllers :as rfc]
             [reitit.frontend]
             [reitit.coercion.schema :as rsc]
-            [re-frisk-remote.core :as re-frisk-remote])
+            [re-frisk-remote.core :as re-frisk-remote]
+            [fdhenard.cledgers.pages.about :as about-page]
+            [fdhenard.cledgers.pages.ledger-balances :as ledger-balances-page])
   #_(:import goog.History))
 
 ;; -------------------------
@@ -63,13 +65,13 @@
            "logout"]]]]]])))
 
 
-(defn about-page []
-  [:div.container
-   [:div.row
-    [:div.col-md-12
-     #_[:img {:src (str js/context "/img/warning_clojure.png")}]
-     [:img {:src "/img/warning_clojure.png"}]
-     #_"warning! clojure"]]])
+;; (defn about-page []
+;;   [:div.container
+;;    [:div.row
+;;     [:div.col-md-12
+;;      #_[:img {:src (str js/context "/img/warning_clojure.png")}]
+;;      [:img {:src "/img/warning_clojure.png"}]
+;;      #_"warning! clojure"]]])
 
 
 
@@ -390,14 +392,16 @@
    (when-let [docs @(rf/subscribe [:docs])]
      [:div.row>div.col-sm-12
       [:div {:dangerouslySetInnerHTML
-             {:__html (md->html docs)}}]])])
+             {:__html (md->html docs)}}]])
+   [:div.container
+    "hi"]])
 
-(def pages
-  {:home #'home-page
-   :lum-home #'luminus-home-page
-   :about #'about-page
-   ;; :login #'login-page/login-page
-   })
+;; (def pages
+;;   {:home #'home-page
+;;    :lum-home #'luminus-home-page
+;;    :about #'about-page/page
+;;    ;; :login #'login-page/login-page
+;;    })
 
 (defonce match (r/atom nil))
 
@@ -430,18 +434,26 @@
     [""
      {:name ::home
       :view home-page
-      :controllers [{:start (.log js/console "controller - home - start")
-                     :stop (.log js/console "controller - home - stop")}]}]
+      :controllers [{:start #(.log js/console "controller - home - start")
+                     :stop #(.log js/console "controller - home - stop")}]}]
     ["luminus-home"
      {:name ::luminus-home
       :view luminus-home-page
-      :controllers [{:start (.log js/console "controller - luminus-home - start")
-                     :stop (.log js/console "controller - luminus-home - stop")}]}]
+      :controllers [{:start #(.log js/console "controller - luminus-home - start")
+                     :stop #(.log js/console "controller - luminus-home - stop")}]}]
     ["about"
      {:name ::about
-      :view about-page
-      :controllers [{:start (.log js/console "controller - about - start")
-                     :stop (.log js/console "controller - about - stop")}]}]]
+      ;; :view about-page
+      :view about-page/page
+      :controllers [{:start #(.log js/console "controller - about - start")
+                     :stop #(.log js/console "controller - about - stop")}]}]
+
+    ["ledger-balances"
+     {:name ::ledger-balances
+      :view ledger-balances-page/page
+      :controllers [{:start #(.log js/console "controller - bal - start")
+                     :stop #(.log js/console "controller - bal -stop")}]}]
+    ]
    {:data {:controllers [{:start (.log js/console "controller - root - start")
                            :stop (.log js/console "controller - root - stop")}]
             :coercion rsc/coercion}}))

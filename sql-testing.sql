@@ -32,5 +32,7 @@ on conflict on constraint properties_name_key
 select * from properties;
 delete from properties;
 
+delete from xaction;
+
 select * from xaction;
 
