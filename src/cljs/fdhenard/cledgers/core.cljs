@@ -33,7 +33,12 @@
    (fn []
      [:nav.navbar {:role "navigation" :aria-label "maim navigation"}
       [:div.navbar-brand
-       [:div.navbar-item "fdhenard.cledgers"]
+       [:a.navbar-item
+        {:href "/#"}
+        "Cledgers"]
+       [:a.navbar-item
+        {:href "/#/ledger-balances"}
+        "ledger balances"]
        [:div.navbar-burger
         {:role "button"
          :aria-label "menu"
@@ -54,6 +59,9 @@
                  #{"is-active"})}
        [:div.navbar-start]
        [:div.navbar-end
+        [:a.navbar-item
+         {:href "/#/about"}
+         "about"]
         [:div.navbar-item.has-dropdown.is-hoverable
          [:a.navbar-link "User"]
          [:div.navbar-dropdown
