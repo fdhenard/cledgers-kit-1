@@ -90,11 +90,11 @@
  :add-transaction
  (fn [db [_ {:keys [uuid] :as xaction_}]]
    (let [xaction$ (assoc xaction_ :time-created (time/now))]
-    (when-not (malli/validate cledgers-spec/Transaction xaction$)
+    (if (malli/validate cledgers-spec/Transaction xaction$)
+      (assoc-in db [:xactions uuid] xaction$)
       (let [explanation (malli/explain cledgers-spec/Transaction xaction$)]
         (pp/pprint {:transactions-invalid explanation})
-        (throw (ex-info "transaction data invalid" {:explain explanation}))))
-    (assoc-in db [:xactions uuid] xaction$))))
+        (throw (ex-info "transaction data invalid" {:explain explanation})))))))
 
 (rf/reg-event-db
  :remove-transaction
