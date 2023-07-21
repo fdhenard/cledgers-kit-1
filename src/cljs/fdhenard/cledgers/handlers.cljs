@@ -234,3 +234,23 @@
  :update-xaction
  (fn [db [_ updated-xaction]]
    (assoc-in db [:xactions (:uuid updated-xaction)] updated-xaction)))
+
+(rf/reg-event-fx
+ :fetch-ledger-totals
+ (fn [_cofx [_ _]]
+   (ajax/GET "/api/ledger-totals"
+             {:error-handler
+              #(.log
+                js/console
+                "error fetching ledger totals"
+                (utils/pp %))
+              :handler
+              (fn [resp]
+                (rf/dispatch [:set-ledger-totals resp]))})
+   {}))
+
+(rf/reg-event-db
+ :set-ledger-totals
+ (fn [db [_ ledger-tots-res]]
+   #_(pp/pprint {:ledger-tots-res ledger-tots-res})
+   (assoc db :ledger-totals (:result ledger-tots-res))))

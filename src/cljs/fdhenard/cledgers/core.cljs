@@ -451,7 +451,10 @@
     ["ledger-balances"
      {:name ::ledger-balances
       :view ledger-balances-page/page
-      :controllers [{:start #(.log js/console "controller - bal - start")
+      :controllers [{:start
+                     (fn [& args]
+                       (.log js/console "controller - bal - start")
+                       (rf/dispatch [:fetch-ledger-totals]))
                      :stop #(.log js/console "controller - bal -stop")}]}]
     ]
    {:data {:controllers [{:start (.log js/console "controller - root - start")

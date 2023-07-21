@@ -103,3 +103,8 @@
  :last-date-used
  (fn [db _something]
    (:last-date-used db)))
+
+(rf/reg-sub
+ :ledger-totals
+ (fn [db _something]
+   (:ledger-totals db)))

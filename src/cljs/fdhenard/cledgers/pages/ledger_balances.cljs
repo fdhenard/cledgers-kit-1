@@ -1,8 +1,20 @@
-(ns fdhenard.cledgers.pages.ledger-balances)
+(ns fdhenard.cledgers.pages.ledger-balances
+  (:require [re-frame.core :as rf]))
 
 
 (defn page []
-  [:div.container
-   [:div.row
-    [:div.col-md-12
-     "stuff here"]]])
+  (let [ledger-totals (rf/subscribe [:ledger-totals])]
+    (fn []
+     [:div.container
+      [:table.table
+       [:thead
+        [:tr
+         [:th "name"]
+         [:th "amount"]]]
+       [:tbody
+        (doall
+         (for [ledg-tot @ledger-totals]
+           ^{:key (:ledger_id ledg-tot)}
+           [:tr
+            [:td (:ledger_name ledg-tot)]
+            [:td (:total ledg-tot)]]))]]])))

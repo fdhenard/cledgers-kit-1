@@ -11,4 +11,5 @@
    :user nil
    #_#_:is-fetching-user? true
    :last-date-used (time/today)
+   :ledger-totals []
    })

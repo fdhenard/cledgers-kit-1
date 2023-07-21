@@ -187,7 +187,18 @@
                tx-conn
                :add-to-reconcile-amt!
                {:amount (* -1 amt-in)})
-              {:status 200}))))}}]])
+              {:status 200}))))}}]
+   ["/ledger-totals"
+    {:get
+     {:handler
+      (fn [_req]
+        (let [{:keys [query-fn]} _opts
+              ledg-tots-res (->> (query-fn :get-ledger-totals {})
+                                 (map
+                                  #(update % :total str)))
+              #_ (pp/pprint {:ledg-tots-res ledg-tots-res})]
+          {:status 200
+           :body {:result ledg-tots-res}}))}}]])
 
 (comment
 
