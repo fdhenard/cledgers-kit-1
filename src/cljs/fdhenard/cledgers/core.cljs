@@ -270,9 +270,10 @@
                 (rf/dispatch [:set-last-date-used
                               (:date @xaction-for-edit)])
                 (rf/dispatch [:add-transaction @xaction-for-edit])
-                (reset! xaction-for-edit (empty-xaction))
                 (let [xaction-to-add (-> @xaction-for-edit
-                                         xform-xaction-for-backend)]
+                                         xform-xaction-for-backend)
+                      _ (pp/pprint {:xaction-to-add xaction-to-add})]
+                  (reset! xaction-for-edit (empty-xaction))
                   (ajax/POST
                    "/api/xactions/"
                    {:params {:xaction xaction-to-add}
