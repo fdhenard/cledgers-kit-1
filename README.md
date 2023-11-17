@@ -20,6 +20,10 @@ in repl
 
 ## dev prereqs
 
+- asdf
+    - `$ brew install asdf`
+    - install asdf plugins: clojure nodejs
+    - run `$ asdf install`
 - db setup
     - postgresql installed
         - use homebrew to install and use `$ brew services start postgresql`
