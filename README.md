@@ -20,6 +20,15 @@ in repl
 
 ## dev prereqs
 
+- install asdf
+	- `brew install asdf`
+- install asdf dependencies (clojure, and nodejs as of 10/27/23)
+
+    ```shell
+    cd ~/dev/repos/cledgers-kit-1
+    asdf install
+    ```
+
 - db setup
     - postgresql installed
         - use homebrew to install and use `$ brew services start postgresql`
@@ -43,14 +52,12 @@ in repl
     - insert self as user
         - eval the code in the Rich Comment of `fdhenard.cledgers.dev.scripts`
 
-- install nvm `brew install nvm` and the latest LTS version of node
-
 ## REPLs
 
 ### CIDER
 
 ```sh
-clj -M:dev:cider
+clojure -M:dev:cider
 ```
 
 Use the `cider` alias for CIDER nREPL support (run `clj -M:dev:cider`). See the [CIDER docs](https://docs.cider.mx/cider/basics/up_and_running.html) for more help.

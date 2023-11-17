@@ -370,6 +370,8 @@
              :disabled @is-reconciling?}
             "reconcile"]]
           [:p.level-item (str "$" @total)]]]
+        [:div.columns.is-centered
+         [:div.column.is-one-quarter.box "filter by ledger"]]
         [:table.table
          [:thead
           [:tr
