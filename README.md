@@ -22,10 +22,11 @@ in repl
 
 - install asdf
 	- `brew install asdf`
-- install asdf dependencies (clojure, and nodejs as of 10/27/23)
+- install asdf dependencies (clojure, and nodejs as of 10/27/23).
 
     ```shell
     cd ~/dev/repos/cledgers-kit-1
+    # below installs from .tool-versions
     asdf install
     ```
 
