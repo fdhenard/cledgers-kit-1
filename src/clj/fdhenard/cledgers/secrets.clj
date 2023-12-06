@@ -22,12 +22,19 @@
 (defn get-token []
   (let [akeyless-access-id (System/getenv "AKEYLESS_ACCESS_ID")
         akeyless-access-key (System/getenv "AKEYLESS_ACCESS_KEY")
+        access-id-has-val? (not (string/blank? akeyless-access-id))
+        access-key-has-val? (not (string/blank? akeyless-access-key))
+        _ (when (or (not access-id-has-val?)
+                    (not access-key-has-val?))
+            (throw (ex-info "cannot fetch secrets"
+                            {:access-id-has-value? access-id-has-val?
+                             :access-key-has-value? access-key-has-val?})))
         _ (log/debug
            (with-out-str
              (pp/pprint
               {:akeyless
-               {:access-id-has-value? (not (string/blank? akeyless-access-id))
-                :access-key-has-value? (not (string/blank? akeyless-access-key))}})))
+               {:access-id-has-value? access-id-has-val?
+                :access-key-has-value? access-key-has-val?}})))
         api (get-akeyless-api)
         body (doto (Configure.)
                (.accessId akeyless-access-id)
