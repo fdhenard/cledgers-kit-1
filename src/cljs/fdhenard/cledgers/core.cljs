@@ -352,7 +352,8 @@
   (let [xactions (rf/subscribe [:xactions-sorted-by-date-desc])
         is-reconciling? (rf/subscribe [:is-reconciling?])
         total (rf/subscribe [:total])
-        editing-id (rf/subscribe [:editing-id])]
+        editing-id (rf/subscribe [:editing-id])
+        ledger-filter-ta-atom (r/atom {})]
     (fn []
       [:div.container
        [:div.container
@@ -371,7 +372,15 @@
             "reconcile"]]
           [:p.level-item (str "$" @total)]]]
         [:div.columns.is-centered
-         [:div.column.is-one-quarter.box "filter by ledger"]]
+         [:div.column.is-one-quarter.box
+          [:div
+           [typeahead/typeahead-component
+            {:ta-atom ledger-filter-ta-atom
+             :query-func get-ledgers!
+             :on-change (fn [selection]
+                          #_(pp/pprint {:selection selection})
+                          (rf/dispatch [:set-ledger-filter selection]))
+             :item->text :name}]]]]
         [:table.table
          [:thead
           [:tr

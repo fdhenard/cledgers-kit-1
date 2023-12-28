@@ -254,3 +254,9 @@
  (fn [db [_ ledger-tots-res]]
    #_(pp/pprint {:ledger-tots-res ledger-tots-res})
    (assoc db :ledger-totals (:result ledger-tots-res))))
+
+
+(rf/reg-event-db
+ :set-ledger-filter
+ (fn [db [_ ledger]]
+   (assoc db :ledger-filter-id (:id ledger))))
