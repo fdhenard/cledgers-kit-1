@@ -381,7 +381,8 @@
              :on-change (fn [selection]
                           #_(pp/pprint {:selection selection})
                           (rf/dispatch [:set-ledger-filter selection]))
-             :item->text :name}]]
+             :item->text :name
+             :allow-new? false}]]
           (when @ledger-filter-id
            [:a
             {:on-click (fn [_evt]

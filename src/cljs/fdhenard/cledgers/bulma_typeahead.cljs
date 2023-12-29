@@ -55,46 +55,49 @@
           textbox-val (-> ta-atom deref :textbox-val)
           selection-val (-> ta-atom deref :selection-val)
           dropdown-expanded (not (= textbox-val selection-val))
-          item->text (:item->text parm-map)]
+          item->text (:item->text parm-map)
+          allow-new? (:allow-new? parm-map true)]
       [:div {:class #{:dropdown (when dropdown-expanded :is-active)}}
        [:div {:class #{:dropdown-trigger}}
         [typeahead-textbox ta-atom query-func item->text]]
        (when-not (string/blank? textbox-val)
-         [:div {:class #{:dropdown-menu} :id :dropdown-menu :role :menu}
-          [:div {:class #{:dropdown-content}}
-           (let [matches (:matches @ta-atom)
-                 match-texts (->> matches
-                                  (map item->text)
-                                  set)
-                 has-exact-match (contains? match-texts textbox-val)
-                 create-new {:id nil
-                             :name textbox-val}
-                 dropdown-vals (if has-exact-match
-                                 matches
-                                 (conj matches create-new))]
-             (for [item dropdown-vals]
-               (let [text (item->text item)
-                     id (:id item)]
-                 (if id
-                   ^{:key id}
-                   [:a {:href "#"
-                        :class #{:dropdown-item}
-                        :on-click (fn [_evt]
-                                    (reset! ta-atom (merge
-                                                     @ta-atom
-                                                     {:textbox-val text
-                                                      :selection-val text}))
-                                    (on-change {:value text
-                                                :is-new false
-                                                :id id}))}
-                    text]
-                   ^{:key "new"}
-                   [:a {:href "#"
-                        :class #{:dropdown-item}
-                        :on-click (fn [_evt]
-                                    (reset! ta-atom (merge @ta-atom
-                                                           {:selection-val textbox-val}))
-                                    (on-change {:value textbox-val
-                                                :is-new true
-                                                :id nil}))}
-                    (str "create new \"" textbox-val "\"")]))))]])])))
+         (let [matches (:matches @ta-atom)
+               match-texts (->> matches
+                                (map item->text)
+                                set)
+               has-exact-match (contains? match-texts textbox-val)
+               create-new {:id nil
+                           :name textbox-val}
+               dropdown-vals (if (or has-exact-match
+                                     (not allow-new?))
+                               matches
+                               (conj matches create-new))]
+           (when (seq dropdown-vals)
+             [:div {:class #{:dropdown-menu} :id :dropdown-menu :role :menu}
+              [:div {:class #{:dropdown-content}}
+               (for [item dropdown-vals]
+                 (let [text (item->text item)
+                       id (:id item)]
+                   (if id
+                     ^{:key id}
+                     [:a {:href "#"
+                          :class #{:dropdown-item}
+                          :on-click (fn [_evt]
+                                      (reset! ta-atom (merge
+                                                       @ta-atom
+                                                       {:textbox-val text
+                                                        :selection-val text}))
+                                      (on-change {:value text
+                                                  :is-new false
+                                                  :id id}))}
+                      text]
+                     ^{:key "new"}
+                     [:a {:href "#"
+                          :class #{:dropdown-item}
+                          :on-click (fn [_evt]
+                                      (reset! ta-atom (merge @ta-atom
+                                                             {:selection-val textbox-val}))
+                                      (on-change {:value textbox-val
+                                                  :is-new true
+                                                  :id nil}))}
+                      (str "create new \"" textbox-val "\"")])))]])))])))
