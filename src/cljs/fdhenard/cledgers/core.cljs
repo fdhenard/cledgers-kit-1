@@ -22,6 +22,7 @@
             [reitit.coercion.schema :as rsc]
             [re-frisk-remote.core :as re-frisk-remote]
             [fdhenard.cledgers.pages.about :as about-page]
+            [fdhenard.cledgers.components :as components]
             [fdhenard.cledgers.pages.ledger-balances :as ledger-balances-page])
   #_(:import goog.History))
 
@@ -175,45 +176,11 @@
     (fn []
       [:tr {:key (:uuid @xaction-for-edit)}
        [:td
-        [:input {:type "text"
-                 :size 2
-                 :value (time/month (:date @xaction-for-edit))
-                 :on-change
-                 (fn [evt]
-                   (let [new-month-val (-> evt .-target .-value)
-                         new-date
-                         (time/local-date
-                          (time/year (:date @xaction-for-edit))
-                          new-month-val
-                          (time/day (:date @xaction-for-edit)))]
-                     (swap! xaction-for-edit assoc :date new-date)))}]
-        [:span "/"]
-        [:input {:type "text"
-                 :size 2
-                 :value (time/day (:date @xaction-for-edit))
-                 :on-change
-                 (fn [evt]
-                   (let [new-day-val (-> evt .-target .-value)
-                         new-date
-                         (time/local-date
-                          (time/year (:date @xaction-for-edit))
-                          (time/month (:date @xaction-for-edit))
-                          new-day-val)]
-                     (swap! xaction-for-edit assoc :date new-date)))
-                 }]
-        [:span "/"]
-        [:input {:type "text"
-                 :size 4
-                 :value (time/year (:date @xaction-for-edit))
-                 :on-change
-                 (fn [evt]
-                   (let [new-year-val (-> evt .-target .-value)
-                         new-date
-                         (time/local-date
-                          new-year-val
-                          (time/month (:date @xaction-for-edit))
-                          new-year-val)]
-                     (swap! xaction-for-edit assoc :date new-date)))}]]
+        [components/editable-date-component
+         {:value (:date @xaction-for-edit)
+          :on-change (fn [new-date]
+                       #_(cljs.pprint/pprint {:new-date new-date})
+                       (swap! xaction-for-edit assoc :date new-date))}]]
        [:td [typeahead/typeahead-component
              {:ta-atom payee-ta-atom
               :query-func get-payees!
@@ -391,6 +358,17 @@
                                                         :selection-val nil})
                          (rf/dispatch [:set-ledger-filter nil]))}
             "clear"])]]
+        [:table.table
+         [:thead
+          [:tr
+           [:th "date"]
+           [:th "ledger from"]
+           [:th "ledger to"]
+           [:th "desc"]
+           [:th "amount"]]]
+         [:tbody
+          [:tr
+           ]]]
         [:table.table
          [:thead
           [:tr
