@@ -108,3 +108,8 @@
  :ledger-totals
  (fn [db _something]
    (:ledger-totals db)))
+
+(rf/reg-sub
+ :ledger-filter-id
+ (fn [db _something]
+   (:ledger-filter-id db)))

@@ -353,7 +353,8 @@
         is-reconciling? (rf/subscribe [:is-reconciling?])
         total (rf/subscribe [:total])
         editing-id (rf/subscribe [:editing-id])
-        ledger-filter-ta-atom (r/atom {})]
+        ledger-filter-ta-atom (r/atom {})
+        ledger-filter-id (rf/subscribe [:ledger-filter-id])]
     (fn []
       [:div.container
        [:div.container
@@ -380,7 +381,14 @@
              :on-change (fn [selection]
                           #_(pp/pprint {:selection selection})
                           (rf/dispatch [:set-ledger-filter selection]))
-             :item->text :name}]]]]
+             :item->text :name}]]
+          (when @ledger-filter-id
+           [:a
+            {:on-click (fn [_evt]
+                         (reset! ledger-filter-ta-atom {:textbox-val nil
+                                                        :selection-val nil})
+                         (rf/dispatch [:set-ledger-filter nil]))}
+            "clear"])]]
         [:table.table
          [:thead
           [:tr

@@ -263,4 +263,5 @@
  (fn [cofx [_ ledger]]
    (let [ledger-id (:id ledger)]
     {:db (assoc (:db cofx) :ledger-filter-id ledger-id)
-     :fx [[:dispatch [:fetch-transactions {:ledger ledger-id}]]]})))
+     :fx [[:dispatch [:fetch-transactions (when ledger-id
+                                            {:ledger ledger-id})]]]})))
