@@ -198,12 +198,6 @@
                       (assoc xaction :amount (str (:amount xaction))))))]
           {:status 200
            :body {:result xactions}}))}}]
-   ["/xactions-honey"
-    {:get
-     {:handler
-      (fn [request]
-        (pp/pprint {:request request})
-        {:status 200})}}]
    ["/reconcile"
     {:post
      {:handler
