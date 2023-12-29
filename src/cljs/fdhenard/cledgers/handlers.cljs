@@ -110,9 +110,11 @@
 
 (rf/reg-event-fx
  :fetch-transactions
- (fn [_cofx [_ _a]]
+ (fn [_cofx [_ filter-map]]
+   ;; (pp/pprint {:fetch-transactions-var filter-map})
    (ajax/GET "/api/xactions/"
-             {:error-handler #(.log js/console "error" (utils/pp %))
+             {:params filter-map
+              :error-handler #(.log js/console "error" (utils/pp %))
               :handler #(rf/dispatch [:set-transactions %])})
    {}))
 
@@ -256,7 +258,9 @@
    (assoc db :ledger-totals (:result ledger-tots-res))))
 
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :set-ledger-filter
- (fn [db [_ ledger]]
-   (assoc db :ledger-filter-id (:id ledger))))
+ (fn [cofx [_ ledger]]
+   (let [ledger-id (:id ledger)]
+    {:db (assoc (:db cofx) :ledger-filter-id ledger-id)
+     :fx [[:dispatch [:fetch-transactions {:ledger ledger-id}]]]})))

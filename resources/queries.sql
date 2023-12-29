@@ -61,14 +61,14 @@ VALUES
 RETURNING id;
 
 
--- :name get-transactions :? :*
-select x.id as xaction_id, x.uuid as xaction_uuid, x.description,
-       x.amount, x.date,  p.id as payee_id, p.name as payee_name,
-       l.id as ledger_id, l.name as ledger_name, x.is_reconciled,
-       x.time_created
-  from xaction x
-  join payee p on p.id = x.payee_id
-  join ledger l on l.id = x.ledger_id
+-- -- :name get-transactions :? :*
+-- select x.id as xaction_id, x.uuid as xaction_uuid, x.description,
+--        x.amount, x.date,  p.id as payee_id, p.name as payee_name,
+--        l.id as ledger_id, l.name as ledger_name, x.is_reconciled,
+--        x.time_created
+--   from xaction x
+--   join payee p on p.id = x.payee_id
+--   join ledger l on l.id = x.ledger_id
 
 -- :name get-xaction-by-uuid :? :1
 select x.id as xaction_id, x.uuid as xaction_uuid, x.description,

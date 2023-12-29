@@ -3,9 +3,11 @@
    [clojure.pprint :as pp]
    [clojure.tools.logging :as log]
    [java-time :as time]
+   [honey.sql]
    [integrant.core :as ig]
    [buddy.hashers :as hashers]
    [next.jdbc :as jdbc]
+   [next.jdbc.result-set]
    [reitit.coercion.malli :as malli]
    [reitit.ring.coercion :as coercion]
    [reitit.ring.middleware.muuntaja :as muuntaja]
@@ -86,6 +88,51 @@
             _ (query-fn tx-conn :update-xaction! xaction-to-save)]
         {:status 200}))))
 
+(defn make-get-transactions-sql [query-params]
+  (let [ledger-filter (when-let [ledger-id (get query-params "ledger")]
+                        [:= :l.id (Long/parseLong ledger-id)])
+        honey {:select [[:x.id :xaction_id]
+                        [:x.uuid :xaction_uuid]
+                        [:x.description]
+                        [:x.amount]
+                        [:x.date]
+                        [:p.id :payee_id]
+                        [:p.name :payee_name]
+                        [:l.id :ledger_id]
+                        [:l.name :ledger_name]
+                        [:x.is_reconciled]
+                        [:x.time_created]]
+               :from [[:xaction :x]]
+               :join-by [:join [[:payee :p] [:= :p.id :x.payee_id]]
+                         :join [[:ledger :l] [:= :l.id :x.ledger_id]]]
+               :where [:and ledger-filter]}]
+    (honey.sql/format honey)))
+
+(comment
+
+  (make-get-transactions-sql {})
+  (make-get-transactions-sql {"ledger" 2})
+  (get nil "leger")
+
+
+  ;; SELECT x.id AS xaction_id, x.uuid AS xaction_uuid, x.description,
+  ;;        x.amount, x.date, p.id AS payee_id, p.name AS payee_name,
+  ;;        l.id AS ledger_id, l.name AS ledger_name, x.is_reconciled,
+  ;;        x.time_created
+  ;;   FROM xaction AS x
+  ;;  INNER JOIN payee AS p ON p.id = x.payee_id
+  ;;  INNER JOIN ledger AS l ON l.id = x.ledger_id
+
+  (require '[integrant.repl.state :as state])
+
+  (let [{:db.sql/keys [connection]} state/system
+        res (jdbc/execute!
+             connection
+             (make-get-transactions-sql {})
+             {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})]
+    res)
+
+  )
 
 ;; Routes
 (defn api-routes [_opts]
@@ -97,7 +144,7 @@
     {:get health/healthcheck!}]
    ["/login/"
     {:post {:handler (fn [{:keys [body-params session] :as _req}]
-                       (let [#_ (pp/pprint {:body-params (:body-params req)})
+                       (let [_ (pp/pprint {:body-params (:body-params _req)})
                              #_ (pp/pprint {:req req})
                              {:keys [query-fn]} _opts
                              #_ (pp/pprint {:_opts _opts})
@@ -137,23 +184,32 @@
      :put {:handler (handle-put-xaction _opts)}
      :get
      {:handler
-      (fn [_request]
-        (let [{:keys [query-fn]} _opts
+      (fn [{:keys [query-params] :as _request}]
+        (let [#_ (pp/pprint {:query-params query-params})
+              {:keys [connection]} _opts
               xactions
-              (->> (query-fn :get-transactions {})
+              (->> (jdbc/execute!
+                    connection
+                    (make-get-transactions-sql query-params)
+                    {:builder-fn next.jdbc.result-set/as-unqualified-lower-maps})
                    (map
                     (fn [xaction]
                       #_(pp/pprint {:xaction xaction})
                       (assoc xaction :amount (str (:amount xaction))))))]
           {:status 200
            :body {:result xactions}}))}}]
+   ["/xactions-honey"
+    {:get
+     {:handler
+      (fn [request]
+        (pp/pprint {:request request})
+        {:status 200})}}]
    ["/reconcile"
     {:post
      {:handler
       (fn [req]
         (let [{:keys [query-fn connection]} _opts
-              {:keys [unreconciled-xaction-uuids
-                      amount]} (:body-params req)
+              {:keys [amount]} (:body-params req)
               amt-in (bigdec amount)
               backend-total (-> (query-fn :sum-xactions-for-reconcile {})
                                 :total)]

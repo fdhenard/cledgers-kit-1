@@ -43,6 +43,8 @@
            metosin/malli {:mvn/version "0.11.0"}
            buddy/buddy-auth {:mvn/version "3.0.323"}
            re-frame-utils/re-frame-utils {:mvn/version "0.1.0"}
+
+           com.github.seancorfield/honeysql {:mvn/version "2.5.1103"}
            }
  :mvn/repos {"akeyless"
              {:url "https://akeyless.jfrog.io/artifactory/akeyless-java"
