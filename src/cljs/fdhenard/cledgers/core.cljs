@@ -374,6 +374,7 @@
           [:p.level-item (str "$" @total)]]]
         [:div.columns.is-centered
          [:div.column.is-one-quarter.box
+          "ledger filter"
           [:div
            [typeahead/typeahead-component
             {:ta-atom ledger-filter-ta-atom
